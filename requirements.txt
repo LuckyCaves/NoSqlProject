@@ -1,0 +1,4 @@
+pymongo
+requests
+cassandra-driver
+time_uuid
