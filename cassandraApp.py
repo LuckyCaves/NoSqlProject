@@ -1,12 +1,14 @@
-from cassandra.cluster import Cluster
-import os
 import logging
+import os
+import random
 from datetime import datetime
+
+from cassandra.cluster import Cluster
 
 import cassandraModel as model
 
 #Set logger
-log = logging.getLogger
+log = logging.getLogger()
 log.setLevel('INFO')
 handler = logging.FileHandler('healthcare.log')
 handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
@@ -26,6 +28,9 @@ def main():
     session.set_keyspace(KEYSPACE)
 
     model.create_schema(session)
+
+    # Insert data
+    model.bulk_insert(session)
 
 if __name__ == '__main__':
     main()
