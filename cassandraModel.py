@@ -7,6 +7,12 @@ from cassandra.query import BatchStatement
 
 log = logging.getLogger()
 
+'''
+========================================================
+==        Cassandra create keyspace and tables        ==
+========================================================
+'''
+
 CREATE_KEYSPACE ="""
     CREATE KEYSPACE IF NOT EXISTS {}
     WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': {}}};
@@ -134,6 +140,152 @@ CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE = """
         PRIMARY KEY (account_id, date, action_id)
     );
 """
+
+'''
+========================================================
+==               Cassandra Queries                    ==
+========================================================
+'''
+
+SELECT_ACCOUNTS = """
+    SELECT 
+        account_id, username, first_name, last_name, registration_date, role
+    FROM accounts
+        WHERE account_id = ?
+"""
+
+SELECT_VITAL_SIGNS_BY_ACCOUNT = """
+    SELECT
+        vital_sign_id, account_id, type, value, date
+    FROM vital_signs_by_account_date
+        WHERE account_id = ?
+"""
+
+SELECT_APPOINTMENTS_BY_PATIENT = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_patient
+        WHERE patient_id = ?
+"""
+
+SELECT_APPOINTMENTS_BY_PATIENT_DATE = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_patient
+        WHERE patient_id = ?
+        AND appointment_date = ?
+"""
+
+SELECT_APPOINTMENTS_BY_DOCTOR = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_doctor
+        WHERE doctor_id = ?
+"""
+
+SELECT_APPOINTMENTS_BY_DOCTOR_DATE = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_doctor
+        WHERE doctor_id = ?
+        AND appointment_date = ?
+"""
+
+INSERT_APPOINTMENT_BY_PATIENT = """
+    INSERT INTO appointments_by_patient(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_APPOINTMENT_BY_DOCTOR = """
+    INSERT INTO appointments_by_doctor(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_APPOINTMENT_BY_DATE = """
+    INSERT INTO appointments_by_date(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_APPOINTMENT_BY_PD = """
+    INSERT INTO appointments_by_pd(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+UPDATE_APPOINTMENT_patient = """
+    UPDATE appointments_by_patient
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+        AND patient_id = ?
+"""
+
+UPDATE_APPOINTMENT_doctor = """
+    UPDATE appointments_by_doctor
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+        AND doctor_id = ?
+"""
+
+UPDATE_APPOINTMENT_date = """
+    UPDATE appointments_by_date
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+"""
+
+UPDATE_APPOINTMENT_patient_doctor = """
+    UPDATE appointments_by_pd
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+        AND patient_id = ?
+        AND doctor_id = ?
+"""
+
+INSERT_DOCTOR = """
+    INSERT INTO doctors(doctor_id, first_name, last_name, specialty)
+    VALUES (?, ?, ?, ?)
+"""
+
+INSERT_PATIENT = """
+    INSERT INTO patients(patient_id, first_name, last_name, dob)
+    VALUES (?, ?, ?, ?)
+"""
+
+INSERT_ACCOUNT = """
+    INSERT INTO accounts(account_id, username, first_name, last_name, registration_date, role)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+INSERT_VITAL_SIGN_BY_ACCOUNT_DATE = """
+    INSERT INTO vital_signs_by_account_date(vital_sign_id, account_id, type, value, date)
+    VALUES (?, ?, ?, ?, ?)
+"""
+
+INSERT_VITAL_SIGN_BY_ACCOUNT_TYPE_DATE = """
+    INSERT INTO vital_signs_by_account_type_date(vital_sign_id, account_id, type, value, date)
+    VALUES (?, ?, ?, ?, ?)
+"""
+
+DELETE_VITAL_SIGNS_BY_ACCOUNT_DATE = """
+    DELETE FROM vital_signs_by_account_date
+    WHERE account_id = ?
+    AND vital_sign_id >= minTimeuuid(?)
+    AND vital_sign_id <= maxTimeuuid(?)
+"""
+
+DELETE_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE = """
+    DELETE FROM vital_signs_by_account_type_date
+    WHERE account_id = ?
+    AND type = ?
+    AND vital_sign_id >= minTimeuuid(?)
+    AND vital_sign_id <= maxTimeuuid(?)
+"""
+
+
+
+
+
 
 def random_dateUUID(dateUUID):
         return time_uuid.TimeUUID.with_timestamp(time_uuid.mkutime(dateUUID))
