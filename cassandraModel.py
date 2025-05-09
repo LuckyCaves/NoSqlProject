@@ -7,6 +7,12 @@ from cassandra.query import BatchStatement
 
 log = logging.getLogger()
 
+'''
+========================================================
+==        Cassandra create keyspace and tables        ==
+========================================================
+'''
+
 CREATE_KEYSPACE ="""
     CREATE KEYSPACE IF NOT EXISTS {}
     WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': {}}};
@@ -29,6 +35,18 @@ CREATE_DOCTORS_TABLE = """
         last_name TEXT,
         specialty TEXT,
         PRIMARY KEY (doctor_id)
+    );
+"""
+
+CREATE_ACCOUNTS_TABLE = """
+    CREATE TABLE IF NOT EXISTS accounts (
+        account_id TEXT,
+        username TEXT,
+        first_name TEXT,
+        last_name TEXT,
+        registration_date TIMEUUID,
+        role TEXT,  
+        PRIMARY KEY (account_id)
     );
 """
 
@@ -68,19 +86,31 @@ CREATE_APPOINTMENTS_BY_DATE_PD_TABLE = """
     )WITH CLUSTERING ORDER BY (appointment_id DESC);
 """
 
-CREATE_ACCOUNTS_BY_PATIENTS_TABLE = """
-    CREATE TABLE IF NOT EXISTS accounts_by_patient (
+CREATE_APPOINTMENTS_BY_DATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS appointments_by_date (
+        appointment_id TIMEUUID,
+        appointment_date DATE,
+        patient_id TEXT,
+        doctor_id TEXT,
+        status TEXT,
+        notes TEXT,
+        PRIMARY KEY (appointment_id)
+    )WITH CLUSTERING ORDER BY (appointment_id DESC);
+"""
+
+CREATE_VITAL_SIGNS_BY_ACCOUNT_DATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS vital_signs_by_account_date (
+        vital_sign_id TIMEUUID,
         account_id TEXT,
-        username TEXT,
-        first_name TEXT,
-        last_name TEXT,
-        registration_date TIMEUUID,
-        PRIMARY KEY (account_id)
-    );
+        type TEXT,
+        value DOUBLE,
+        date DATE,
+        PRIMARY KEY (account_id, vital_sign_id)
+    )WITH CLUSTERING ORDER BY (vital_sign_id DESC);
 """
 
 CREATE_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE_TABLE = """
-    CREATE TABLE IF NOT EXISTS vital_signs_by_type_date (
+    CREATE TABLE IF NOT EXISTS vital_signs_by_account_type_date (
         vital_sign_id TIMEUUID,
         account_id TEXT,
         type TEXT,
@@ -88,6 +118,17 @@ CREATE_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE_TABLE = """
         date DATE,
         PRIMARY KEY (account_id, type, vital_sign_id)
     )WITH CLUSTERING ORDER BY (type DESC, vital_sign_id DESC);
+"""
+
+CREATE_ALERTS_BY_ACCOUNT_DATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS alerts_by_account_date (
+        alert_id TIMEUUID,
+        account_id TEXT,
+        date DATE,
+        alert_type TEXT,
+        alert_message TEXT,
+        PRIMARY KEY (account_id, alert_id)
+    );
 """
 
 CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE = """
@@ -100,16 +141,151 @@ CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE = """
     );
 """
 
-CREATE_ALERTS_BY_ACCOUNT_DATE_TABLE = """
-    CREATE TABLE IF NOT EXISTS alerts_by_account_date (
-        alert_id TIMEUUID,
-        account_id TEXT,
-        date DATE,
-        alert_type TEXT,
-        alert_message TEXT,
-        PRIMARY KEY (account_id, date, alert_id)
-    );
+'''
+========================================================
+==               Cassandra Queries                    ==
+========================================================
+'''
+
+SELECT_ACCOUNTS = """
+    SELECT 
+        account_id, username, first_name, last_name, registration_date, role
+    FROM accounts
+        WHERE account_id = ?
 """
+
+SELECT_VITAL_SIGNS_BY_ACCOUNT = """
+    SELECT
+        vital_sign_id, account_id, type, value, date
+    FROM vital_signs_by_account_date
+        WHERE account_id = ?
+"""
+
+SELECT_APPOINTMENTS_BY_PATIENT = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_patient
+        WHERE patient_id = ?
+"""
+
+SELECT_APPOINTMENTS_BY_PATIENT_DATE = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_patient
+        WHERE patient_id = ?
+        AND appointment_date = ?
+"""
+
+SELECT_APPOINTMENTS_BY_DOCTOR = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_doctor
+        WHERE doctor_id = ?
+"""
+
+SELECT_APPOINTMENTS_BY_DOCTOR_DATE = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_doctor
+        WHERE doctor_id = ?
+        AND appointment_date = ?
+"""
+
+INSERT_APPOINTMENT_BY_PATIENT = """
+    INSERT INTO appointments_by_patient(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_APPOINTMENT_BY_DOCTOR = """
+    INSERT INTO appointments_by_doctor(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_APPOINTMENT_BY_DATE = """
+    INSERT INTO appointments_by_date(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+INSERT_APPOINTMENT_BY_PD = """
+    INSERT INTO appointments_by_pd(appointment_id, appointment_date, patient_id, doctor_id, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+UPDATE_APPOINTMENT_patient = """
+    UPDATE appointments_by_patient
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+        AND patient_id = ?
+"""
+
+UPDATE_APPOINTMENT_doctor = """
+    UPDATE appointments_by_doctor
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+        AND doctor_id = ?
+"""
+
+UPDATE_APPOINTMENT_date = """
+    UPDATE appointments_by_date
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+"""
+
+UPDATE_APPOINTMENT_patient_doctor = """
+    UPDATE appointments_by_pd
+        SET status = ?,
+            notes = ?
+        WHERE appointment_id = ?
+        AND patient_id = ?
+        AND doctor_id = ?
+"""
+
+INSERT_DOCTOR = """
+    INSERT INTO doctors(doctor_id, first_name, last_name, specialty)
+    VALUES (?, ?, ?, ?)
+"""
+
+INSERT_PATIENT = """
+    INSERT INTO patients(patient_id, first_name, last_name, dob)
+    VALUES (?, ?, ?, ?)
+"""
+
+INSERT_ACCOUNT = """
+    INSERT INTO accounts(account_id, username, first_name, last_name, registration_date, role)
+    VALUES (?, ?, ?, ?, ?, ?)
+"""
+INSERT_VITAL_SIGN_BY_ACCOUNT_DATE = """
+    INSERT INTO vital_signs_by_account_date(vital_sign_id, account_id, type, value, date)
+    VALUES (?, ?, ?, ?, ?)
+"""
+
+INSERT_VITAL_SIGN_BY_ACCOUNT_TYPE_DATE = """
+    INSERT INTO vital_signs_by_account_type_date(vital_sign_id, account_id, type, value, date)
+    VALUES (?, ?, ?, ?, ?)
+"""
+
+DELETE_VITAL_SIGNS_BY_ACCOUNT_DATE = """
+    DELETE FROM vital_signs_by_account_date
+    WHERE account_id = ?
+    AND vital_sign_id >= minTimeuuid(?)
+    AND vital_sign_id <= maxTimeuuid(?)
+"""
+
+DELETE_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE = """
+    DELETE FROM vital_signs_by_account_type_date
+    WHERE account_id = ?
+    AND type = ?
+    AND vital_sign_id >= minTimeuuid(?)
+    AND vital_sign_id <= maxTimeuuid(?)
+"""
+
+
+
+
+
 
 def random_dateUUID(dateUUID):
         return time_uuid.TimeUUID.with_timestamp(time_uuid.mkutime(dateUUID))
@@ -129,13 +305,15 @@ def create_schema(session):
     log.info("Creating Cassandra model schema")
     session.execute(CREATE_PATIENTS_TABLE)
     session.execute(CREATE_DOCTORS_TABLE)
+    session.execute(CREATE_APPOINTMENTS_BY_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_PATIENT_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_DOCTOR_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_DATE_PD_TABLE)
+    session.execute(CREATE_ACCOUNTS_TABLE)
     session.execute(CREATE_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE_TABLE)
-    session.execute(CREATE_ACCOUNTS_BY_PATIENTS_TABLE)
-    session.execute(CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE)
+    session.execute(CREATE_VITAL_SIGNS_BY_ACCOUNT_DATE_TABLE)
     session.execute(CREATE_ALERTS_BY_ACCOUNT_DATE_TABLE)
+    session.execute(CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE) #Probalemente no se necesite
 
 patientsData = [
     {"first_name": "John", "last_name": "Doe", "username": "jdoe"},
@@ -188,17 +366,20 @@ def execute_batch(session, stmt, data):
 def bulk_insert(session):
     pat_stmt = session.prepare("INSERT INTO patients(patient_id, first_name, last_name, dob) VALUES (?, ?, ?, ?)")
     doc_stmt = session.prepare("INSERT INTO doctors(doctor_id, first_name, last_name, specialty) VALUES (?, ?, ?, ?)")
+    appbt_stmt = session.prepare("INSERT INTO appointments_by_date(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     appbpt_stmt = session.prepare("INSERT INTO appointments_by_patient(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     appbdt_stmt = session.prepare("INSERT INTO appointments_by_doctor(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     appbpd_stmt = session.prepare("INSERT INTO appointments_by_pd(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
-    acc_stmt = session.prepare("INSERT INTO accounts_by_patient(account_id, username, first_name, last_name, registration_date) VALUES (?, ?, ?, ?, ?)")
+    acc_stmt = session.prepare("INSERT INTO accounts(account_id, username, first_name, last_name, registration_date, role) VALUES (?, ?, ?, ?, ?, ?)")
     vs_stmt = session.prepare("INSERT INTO vital_signs_by_type_date(vital_sign_id, account_id, type, value, date) VALUES (?, ?, ?, ?, ?)")
-    act_stmt = session.prepare("INSERT INTO actions_by_account_date(action_id, account_id, date, action_type) VALUES (?, ?, ?, ?)")
+    vsad_stmt = session.prepare("INSERT INTO vital_signs_by_account_date(vital_sign_id, account_id, type, value, date) VALUES (?, ?, ?, ?, ?)")
     alert_stmt = session.prepare("INSERT INTO alerts_by_account_date(alert_id, account_id, date, alert_type, alert_message) VALUES (?, ?, ?, ?, ?)")
+    act_stmt = session.prepare("INSERT INTO actions_by_account_date(action_id, account_id, date, action_type) VALUES (?, ?, ?, ?)")
 
     patients = []
     patientsAcc = []
     doctors = []
+    doctorsAcc = []
 
     patients_num=10
     doctor_num=10
@@ -235,18 +416,29 @@ def bulk_insert(session):
         status = random.choice(['scheduled', 'completed', 'cancelled'])
         notes = random.choice(['', 'Patient needs to fast before the appointment', 'Patient needs to bring a urine sample'])
         data.append((app_id, app_date, patient, doctor, status, notes))
+    execute_batch(session, appbt_stmt, data)
     execute_batch(session, appbpt_stmt, data)
     execute_batch(session, appbdt_stmt, data)
     execute_batch(session, appbpd_stmt, data)
 
-    #Generate accounts by patient
+    #Generate accounts doctors
     data = []
     for index, patient in enumerate(patients):
         account_id = str(uuid.uuid4())
         patientsAcc.append(account_id)
         registration_date = random_date(datetime.datetime(2020, 1, 1), datetime.datetime(2021, 1, 1))
         registration_date = random_dateUUID(registration_date)
-        data.append((account_id, patientsData[index]["username"], patientsData[index]["first_name"], patientsData[index]["last_name"], registration_date))
+        data.append((account_id, patientsData[index]["username"], patientsData[index]["first_name"], patientsData[index]["last_name"], registration_date, 'patient'))
+    execute_batch(session, acc_stmt, data)
+    
+    # Generate accounts doctors
+    data = []
+    for index, doctor in enumerate(doctors):
+        account_id = str(uuid.uuid4())
+        doctorsAcc.append(account_id)
+        registration_date = random_date(datetime.datetime(2020, 1, 1), datetime.datetime(2021, 1, 1))
+        registration_date = random_dateUUID(registration_date)
+        data.append((account_id, doctorsData[index]["username"], doctorsData[index]["first_name"], doctorsData[index]["last_name"], registration_date, 'doctor'))
     execute_batch(session, acc_stmt, data)
 
     # Generate vital signs
@@ -259,6 +451,7 @@ def bulk_insert(session):
         vital_sign_id = random_dateUUID(vital_sign_date)
         data.append((vital_sign_id, account, vital_sign_type, vital_sign_value, vital_sign_date))
     execute_batch(session, vs_stmt, data)
+    execute_batch(session, vsad_stmt, data)
 
     # Generate actions
     data = []
