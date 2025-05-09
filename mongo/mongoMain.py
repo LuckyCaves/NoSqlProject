@@ -3,8 +3,9 @@ import falcon.asgi
 from pymongo import MongoClient
 import logging
 
-from resources import PatientResource, PatientsResource, FormTemplateResource
+from mongoResources import PatientResource, PatientsResource, DoctorResource, DoctorsResource, FormTemplateResource
 
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,11 +25,15 @@ db = client.projectmongodb
 app = falcon.asgi.App(middleware=[LoggingMiddleware()])
 
 # Instantiate the resources
-patients_resource = PatientsResource(db)
 patient_resource = PatientResource(db)
+patinets_resource = PatientsResource(db)
+doctor_resource = DoctorResource(db)
+doctors_resource = DoctorsResource(db)
 form_template_resource = FormTemplateResource(db)
 
 # Add routes to serve the resources
-app.add_route('/patients', patients_resource)
+app.add_route('/patients', patinets_resource)
 app.add_route('/patients/{patient_id}', patient_resource)
+app.add_route('/doctors', doctors_resource)
+app.add_route('/doctors/{doctor_id}', doctor_resource)
 app.add_route('/form-templates', form_template_resource)
