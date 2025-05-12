@@ -1,0 +1,6 @@
+doctor_id,full_name,specialty,license_number,phone_number,email,university,graduation_year,rfc,address,dob
+D2001,Dra. Sofía Ramírez,Cardiología,CAR12345,5551112233,sofia@example.com,UNAM,2005,RAMS850315ABC,Calle Fuego 123,1985-03-15
+D2002,Dr. Javier Morales,Neumología,NEU54321,5552223344,javier@example.com,IPN,2010,MORJ801122DEF,Avenida Viento 456,1980-11-22
+D2003,Dra. Laura Sánchez,Endocrinología,END98765,5553334455,laura@example.com,UAM,2015,SANL750505GHI,Boulevard Agua 789,1975-05-05
+D2004,Dr. Roberto Jiménez,Reumatología,REU45678,5554445566,roberto@example.com,UDG,2008,JIMR820707JKL,Calle Tierra 321,1982-07-07
+D2005,Dra. Patricia Vargas,Medicina General,MEG13579,5555556677,patricia@example.com,UV,2012,VARP900909MNO,Avenida Sol 654,1990-09-09
