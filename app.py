@@ -1,8 +1,8 @@
-def set_username():
-    role = input('What is your role?:\n\n1: Doctor\n2: Patient\n\nEnter tour choise:')
-    username = input('Username to use app: ')
-    log.info(f"Username set to {username}")
-    return username
+# def set_username():
+#     role = input('What is your role?:\n\n1: Doctor\n2: Patient\n\nEnter tour choise:')
+#     username = input('Username to use app: ')
+#     log.info(f"Username set to {username}")
+#     return username
 
 def check_patient_appointments():
     patient_name = input("Enter the patient ID: ")

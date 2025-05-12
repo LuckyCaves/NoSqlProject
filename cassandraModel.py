@@ -149,7 +149,7 @@ CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE = """
 
 SELECT_ACCOUNTS = """
     SELECT 
-        account_id, username, first_name, last_name, registration_date, role
+        account_id, username, role, first_name, last_name, registration_date
     FROM accounts
         WHERE account_id = ?
 """
@@ -178,6 +178,7 @@ SELECT_APPOINTMENTS_BY_PATIENT = """
         appointment_id, appointment_date, patient_id, doctor_id, status, notes
     FROM appointments_by_patient
         WHERE patient_id = ?
+        AND appointment_id >= minTimeuuid(?)
 """
 
 SELECT_APPOINTMENTS_BY_PATIENT_DATE = """
@@ -185,7 +186,8 @@ SELECT_APPOINTMENTS_BY_PATIENT_DATE = """
         appointment_id, appointment_date, patient_id, doctor_id, status, notes
     FROM appointments_by_patient
         WHERE patient_id = ?
-        AND appointment_date = ?
+        AND appointment_id  >= minTimeuuid(?)
+        AND appointment_id <= maxTimeuuid(?)
 """
 
 SELECT_APPOINTMENTS_BY_DOCTOR = """
@@ -193,6 +195,7 @@ SELECT_APPOINTMENTS_BY_DOCTOR = """
         appointment_id, appointment_date, patient_id, doctor_id, status, notes
     FROM appointments_by_doctor
         WHERE doctor_id = ?
+        AND appointment_id >= minTimeuuid(?)
 """
 
 SELECT_APPOINTMENTS_BY_DOCTOR_DATE = """
@@ -201,6 +204,25 @@ SELECT_APPOINTMENTS_BY_DOCTOR_DATE = """
     FROM appointments_by_doctor
         WHERE doctor_id = ?
         AND appointment_date = ?
+"""
+
+SELECT_APPOINTMENTS_BY_PATIENT_DOCTOR = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_pd
+        WHERE patient_id = ?
+        AND doctor_id = ?
+        AND appointment_id >= minTimeuuid(?)
+"""
+
+SELECT_APPOINTMENTS_BY_PATIENT_DOCTOR_DATE = """
+    SELECT
+        appointment_id, appointment_date, patient_id, doctor_id, status, notes
+    FROM appointments_by_pd
+        WHERE patient_id = ?
+        AND doctor_id = ?
+        AND appointment_id >= minTimeuuid(?)
+        AND appointment_id <= maxTimeuuid(?)
 """
 
 SELECT_ALERTS_BY_ACCOUNT = """
@@ -325,7 +347,7 @@ def create_schema(session):
     log.info("Creating Cassandra model schema")
     session.execute(CREATE_PATIENTS_TABLE)
     session.execute(CREATE_DOCTORS_TABLE)
-    session.execute(CREATE_APPOINTMENTS_BY_DATE_TABLE)
+    # session.execute(CREATE_APPOINTMENTS_BY_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_PATIENT_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_DOCTOR_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_DATE_PD_TABLE)
@@ -386,12 +408,12 @@ def execute_batch(session, stmt, data):
 def bulk_insert(session):
     pat_stmt = session.prepare("INSERT INTO patients(patient_id, first_name, last_name, dob) VALUES (?, ?, ?, ?)")
     doc_stmt = session.prepare("INSERT INTO doctors(doctor_id, first_name, last_name, specialty) VALUES (?, ?, ?, ?)")
-    appbt_stmt = session.prepare("INSERT INTO appointments_by_date(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
+    # appbt_stmt = session.prepare("INSERT INTO appointments_by_date(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     appbpt_stmt = session.prepare("INSERT INTO appointments_by_patient(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     appbdt_stmt = session.prepare("INSERT INTO appointments_by_doctor(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     appbpd_stmt = session.prepare("INSERT INTO appointments_by_pd(appointment_id, appointment_date, patient_id, doctor_id, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
     acc_stmt = session.prepare("INSERT INTO accounts(account_id, username, first_name, last_name, registration_date, role) VALUES (?, ?, ?, ?, ?, ?)")
-    vs_stmt = session.prepare("INSERT INTO vital_signs_by_type_date(vital_sign_id, account_id, type, value, date) VALUES (?, ?, ?, ?, ?)")
+    vs_stmt = session.prepare("INSERT INTO vital_signs_by_account_type_date(vital_sign_id, account_id, type, value, date) VALUES (?, ?, ?, ?, ?)")
     vsad_stmt = session.prepare("INSERT INTO vital_signs_by_account_date(vital_sign_id, account_id, type, value, date) VALUES (?, ?, ?, ?, ?)")
     alert_stmt = session.prepare("INSERT INTO alerts_by_account_date(alert_id, account_id, date, alert_type, alert_message) VALUES (?, ?, ?, ?, ?)")
     act_stmt = session.prepare("INSERT INTO actions_by_account_date(action_id, account_id, date, action_type) VALUES (?, ?, ?, ?)")
@@ -436,7 +458,7 @@ def bulk_insert(session):
         status = random.choice(['scheduled', 'completed', 'cancelled'])
         notes = random.choice(['', 'Patient needs to fast before the appointment', 'Patient needs to bring a urine sample'])
         data.append((app_id, app_date, patient, doctor, status, notes))
-    execute_batch(session, appbt_stmt, data)
+    # execute_batch(session, appbt_stmt, data)
     execute_batch(session, appbpt_stmt, data)
     execute_batch(session, appbdt_stmt, data)
     execute_batch(session, appbpd_stmt, data)
@@ -512,23 +534,23 @@ def insert_doctor(session, doctorData):
 
 def insert_appointment(session, appointmentData):
 
-    appbt_stmt = session.prepare(INSERT_APPOINTMENT_BY_DATE)
+    # appbt_stmt = session.prepare(INSERT_APPOINTMENT_BY_DATE)
     appbpt_stmt = session.prepare(INSERT_APPOINTMENT_BY_PATIENT)
     appbdt_stmt = session.prepare(INSERT_APPOINTMENT_BY_DOCTOR)
     appbpd_stmt = session.prepare(INSERT_APPOINTMENT_BY_PD)
 
-    execute_batch(session, appbt_stmt, [appointmentData])
+    # execute_batch(session, appbt_stmt, [appointmentData])
     execute_batch(session, appbpt_stmt, [appointmentData])
     execute_batch(session, appbdt_stmt, [appointmentData])
     execute_batch(session, appbpd_stmt, [appointmentData])
 
 def update_appointment(session, appointmentData):
-    appbt_stmt = session.prepare(UPDATE_APPOINTMENT_DATE)
+    # appbt_stmt = session.prepare(UPDATE_APPOINTMENT_DATE)
     appbpt_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT)
     appbdt_stmt = session.prepare(UPDATE_APPOINTMENT_DOCTOR)
     appbpd_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT_DOCTOR)
 
-    execute_batch(session, appbt_stmt, [appointmentData])
+    # execute_batch(session, appbt_stmt, [appointmentData])
     execute_batch(session, appbpt_stmt, [appointmentData])
     execute_batch(session, appbdt_stmt, [appointmentData])
     execute_batch(session, appbpd_stmt, [appointmentData])
@@ -536,23 +558,71 @@ def update_appointment(session, appointmentData):
 def get_appointments_by_patient(session, patient_id, appointment_date=None):
 
     if appointment_date:
+        stmt = session.prepare(SELECT_APPOINTMENTS_BY_PATIENT_DATE)
+        rows = session.execute(stmt, [patient_id, appointment_date, appointment_date])
+    else:
+        appointment_date = datetime.datetime.now()
         stmt = session.prepare(SELECT_APPOINTMENTS_BY_PATIENT)
         rows = session.execute(stmt, [patient_id, appointment_date])
-    else:
-        stmt = session.prepare(SELECT_APPOINTMENTS_BY_PATIENT_DATE)
-        rows = session.execute(stmt, [patient_id, appointment_date])
-    
-    return rows if rows else None
+
+    if rows is None:
+        print("You have no appointments.")
+        return
+
+    for row in rows:
+        print(" ")
+        print("**** Appointment ****")
+        doctorData = get_user(session, row.doctor_id)
+        print(f"=== Date: {row.appointment_date}")
+        print(f"=== Doctor: {doctorData[3]} {doctorData[4]}")
+        print(f"=== Status: {row.status}")
+        print(f"=== Notes: {row.notes}")
+
 
 def get_appointments_by_doctor(session, doctor_id, appointment_date=None):
     if appointment_date:
-        stmt = session.prepare(SELECT_APPOINTMENTS_BY_DOCTOR)
-        rows = session.execute(stmt, [doctor_id, appointment_date])
-    else:
         stmt = session.prepare(SELECT_APPOINTMENTS_BY_DOCTOR_DATE)
         rows = session.execute(stmt, [doctor_id, appointment_date])
-    
-    return rows if rows else None
+    else:
+        appointment_date = datetime.datetime.now()
+        stmt = session.prepare(SELECT_APPOINTMENTS_BY_DOCTOR)
+        rows = session.execute(stmt, [doctor_id])
+
+    if rows is None:
+        print("You have no appointments.")
+        return
+
+    for row in rows:
+        patientData = get_user(session, row.patient_id)
+        print(" ")
+        print("**** Appointment ****")
+        print(f"=== Date: {row.appointment_date}")
+        print(f"=== Patient: {patientData[3]} {patientData[4]}")
+        print(f"=== Status: {row.status}")
+        print(f"=== Notes: {row.notes}")
+
+def get_appointments_by_patient_doctor(session, patient_id, doctor_id, appointment_date=None):
+    if appointment_date:
+        stmt = session.prepare(SELECT_APPOINTMENTS_BY_PATIENT_DOCTOR_DATE)
+        rows = session.execute(stmt, [patient_id, doctor_id, appointment_date, appointment_date])
+    else:
+        stmt = session.prepare(SELECT_APPOINTMENTS_BY_PATIENT_DOCTOR)
+        rows = session.execute(stmt, [patient_id, doctor_id, appointment_date])
+
+    if rows is None:
+        print("You have no appointments.")
+        return
+
+    for row in rows:
+        patientData = get_user(session, row.patient_id)
+        doctorData = get_user(session, row.doctor_id)
+        print(" ")
+        print("**** Appointment ****")
+        print(f"=== Date: {row.appointment_date}")
+        print(f"=== Doctor: {doctorData[3]} {doctorData[4]}")
+        print(f"=== Patient: {patientData[3]} {patientData[4]}")
+        print(f"=== Status: {row.status}")
+        print(f"=== Notes: {row.notes}")
 
 def insert_vital_sign(session, vitalSignData):
     vs_stmt = session.prepare(INSERT_VITAL_SIGN_BY_ACCOUNT_DATE)
@@ -570,11 +640,6 @@ def delete_vital_signs(session, account_id, start_date, end_date):
 
 def get_vital_signs(session, account_id, start_date=None, end_date=None, vital_sign_type=None):
 
-    if not start_date:
-        start_date = datetime.date.today() - datetime.timedelta(days=30)
-    if not end_date:
-        end_date = datetime.date.today()
-
     if vital_sign_type:
         stmt = session.prepare(SELECT_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE)
         rows = session.execute(stmt, [account_id, vital_sign_type, start_date, end_date])
@@ -582,7 +647,17 @@ def get_vital_signs(session, account_id, start_date=None, end_date=None, vital_s
         stmt = session.prepare(SELECT_VITAL_SIGNS_BY_ACCOUNT_DATE)
         rows = session.execute(stmt, [account_id, start_date, end_date])
 
-    return rows if rows else None
+    if rows is None:
+        print("You have no vital signs registered.")
+        return
+
+    for row in rows:
+        print(" ")
+        print("**** Vital Sign ****")
+        print(f"=== Date: {row.date}")
+        print(f"=== Type: {row.type}")
+        print(f"=== Value: {row.value}")
+
 
 def insert_alert(session, alertData):
 
