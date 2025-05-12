@@ -1,4 +1,4 @@
-fastapi[all]
-pydantic
+falcon
 pymongo
+uvicorn
 requests
