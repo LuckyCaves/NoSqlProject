@@ -73,14 +73,37 @@ def printMenuDoctor():
 def printMenuPatient():
     mm_options = {
         0: "View appointments",
-        1: "View vital signs"
+        1: "View vital signs",
+        2: "View alerts"
     }
     for key in mm_options.keys():
         print(key, '--', mm_options[key])
 
+def createAppointment(session):
+    appointmentData = {}
+    appointmentData['patient_id'] = input("Enter patient ID:")
+    appointmentData['doctor_id'] = input("Enter doctor ID:")
+    appointmentData['date'] = input("Enter date [yyyy-mm-dd hh:mm:ss]:")
+    appointmentData['id'] = model.random_dateUUID(appointmentData['date'])
+    appointmentData['status'] = "Scheduled"
+    appointmentData['notes'] = input("Enter notes (leave empty for no notes):")
+
+    model.insert_appointment(session, appointmentData)
+
+def updateAppointment(session):
+    appointmentData = {}
+    appointmentData['appointment_id'] = input("Enter appointment ID:")
+    appointmentData['status'] = input("Enter status (leave empty for no changes):")
+    appointmentData['notes'] = input("leave empty for no changes):")
+
+    model.update_appointment(session, appointmentData)
+
+    print("**** Appointment updated ****")
+
 def appDoctor(session, accountData):
-    printMenuDoctor()
     while True:
+        print("")
+        printMenuDoctor()
         print("**** Select an option ****")
         option = int(input("Option: "))
         if option == 0:
@@ -104,8 +127,12 @@ def appDoctor(session, accountData):
             pass
         elif option == 2:
             # Update appointment
+            print("**** Update appointment ****")
+            updateAppointment(session)
             pass
         elif option == 3:
+            print("**** Create appointment ****")
+            createAppointment(session)
             # Create appointment
             pass
         elif option == 4:
@@ -123,13 +150,17 @@ def appDoctor(session, accountData):
             pass
         elif option == 5:
             # Delete vital signs
+            print("**** Delete vital signs ****")
+            dateRange = handle_date_ranges()
+            model.delete_vital_signs(session, accountData['account_id'], dateRange[0], dateRange[1])
             pass
         else:
             print("Invalid option. Please try again.")
 
 def appPatient(session, accountData):
-    printMenuPatient()
     while True:
+        print("")
+        printMenuPatient()
         print("**** Select an option ****")
         option = int(input("Option: "))
         if option == 0:
@@ -158,8 +189,12 @@ def appPatient(session, accountData):
                 model.get_vital_signs(session, accountData['account_id'], dateRange[0], dateRange[1], vitalSignType)
             else:
                 model.get_vital_signs(session, accountData['account_id'], dateRange[0], dateRange[1])
-
             pass
+        elif option == 2:
+            # View alerts
+            print("**** View alerts ****")
+
+
         else:
             print("Invalid option. Please try again.")
 

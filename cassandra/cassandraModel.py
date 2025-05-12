@@ -1,6 +1,6 @@
 import time_uuid
 import logging
-import datetime
+from datetime import datetime
 import random
 import uuid
 from cassandra.query import BatchStatement
@@ -573,7 +573,9 @@ def get_appointments_by_patient(session, patient_id, appointment_date=None):
         print(" ")
         print("**** Appointment ****")
         doctorData = get_user(session, row.doctor_id)
-        print(f"=== Date: {row.appointment_date}")
+        date = time_uuid.TimeUUID.get_timestamp(row.appointment_id)
+        date = datetime.fromtimestamp(date)
+        print(f"=== Date: {date}")
         print(f"=== Doctor: {doctorData[3]} {doctorData[4]}")
         print(f"=== Status: {row.status}")
         print(f"=== Notes: {row.notes}")
@@ -596,7 +598,9 @@ def get_appointments_by_doctor(session, doctor_id, appointment_date=None):
         patientData = get_user(session, row.patient_id)
         print(" ")
         print("**** Appointment ****")
-        print(f"=== Date: {row.appointment_date}")
+        date = time_uuid.TimeUUID.get_timestamp(row.appointment_id)
+        date = datetime.fromtimestamp(date)
+        print(f"=== Date: {date}")
         print(f"=== Patient: {patientData[3]} {patientData[4]}")
         print(f"=== Status: {row.status}")
         print(f"=== Notes: {row.notes}")
@@ -618,7 +622,9 @@ def get_appointments_by_patient_doctor(session, patient_id, doctor_id, appointme
         doctorData = get_user(session, row.doctor_id)
         print(" ")
         print("**** Appointment ****")
-        print(f"=== Date: {row.appointment_date}")
+        date = time_uuid.TimeUUID.get_timestamp(row.appointment_id)
+        date = datetime.fromtimestamp(date)
+        print(f"=== Date: {date}")
         print(f"=== Doctor: {doctorData[3]} {doctorData[4]}")
         print(f"=== Patient: {patientData[3]} {patientData[4]}")
         print(f"=== Status: {row.status}")

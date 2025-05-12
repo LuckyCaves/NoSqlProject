@@ -4,9 +4,9 @@
 #     log.info(f"Username set to {username}")
 #     return username
 
-def check_patient_appointments():
-    patient_name = input("Enter the patient ID: ")
-    date_to_check = in
+# def check_patient_appointments():
+#     patient_name = input("Enter the patient ID: ")
+#     date_to_check = in
 
 def print_menu():
     mm_options = {
