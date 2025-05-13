@@ -109,11 +109,26 @@ class PatientResource:
     def __init__(self, db):
         self.db = db
 
+    def _convert_datetimes(self, data):
+        """Helper method to convert datetime objects to ISO format strings"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    self._convert_datetimes(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        self._convert_datetimes(item)
+        return data
+
     async def on_get(self, req, resp, patient_id):
         """Get patient by ID"""
         patient = self.db.patients.find_one({"patient_id": patient_id})
         if patient:
             patient['_id'] = str(patient['_id'])
+            # Convert datetime objects to strings
+            self._convert_datetimes(patient)
             resp.media = patient
             resp.status = falcon.HTTP_200
         else:
@@ -149,8 +164,21 @@ class PatientsResource:
     def __init__(self, db):
         self.db = db
 
+    def _convert_datetimes(self, data):
+        """Helper method to convert datetime objects to ISO format strings"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    self._convert_datetimes(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        self._convert_datetimes(item)
+        return data
+
     async def on_get(self, req, resp):
-        """Search patients by name"""
+        """Get all patients or search by name"""
         name = req.get_param('name')
         query = {}
         if name:
@@ -160,6 +188,8 @@ class PatientsResource:
         patients_list = []
         for patient in patients:
             patient['_id'] = str(patient['_id'])
+            # Convert datetime objects to strings
+            self._convert_datetimes(patient)
             patients_list.append(patient)
         resp.media = patients_list
         resp.status = falcon.HTTP_200

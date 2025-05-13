@@ -3,6 +3,7 @@ import falcon.asgi
 from pymongo import MongoClient
 import logging
 from datetime import datetime
+
 from resources import (
     PatientResource,
     PatientsResource,
@@ -42,8 +43,5 @@ allergy_resource = AllergyResource(db)
 # Add routes
 app.add_route('/patients', patients_resource)
 app.add_route('/patients/{patient_id}', patient_resource)
-app.add_route('/patients/{patient_id}/lab_results', lab_result_resource)
-app.add_route('/patients/{patient_id}/prescriptions', prescription_resource)
-app.add_route('/patients/{patient_id}/allergies', allergy_resource)
 app.add_route('/doctors', doctors_resource)
 app.add_route('/doctors/{doctor_id}', doctor_resource)

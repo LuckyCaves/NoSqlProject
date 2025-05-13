@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 import csv
 import requests
+import ast
 from datetime import datetime
 
-API_URL = "http://localhost:8000"
-
-import csv
-import requests
-import ast
-
-API_URL = "http://localhost:8000"
+API_URL = "http://127.0.0.1:8000"
 
 def create_patients():
     with open("patients.csv", encoding="utf-8") as fd:
@@ -45,16 +40,16 @@ def create_patients():
                     try:
                         patient[field] = ast.literal_eval(patient[field])
                     except Exception as e:
-                        print(f"⚠️ Error interpretando campo {field} del paciente {patient['patient_id']}: {e}")
+                        print(f"Error interpretando campo {field} del paciente {patient['patient_id']}: {e}")
                         patient[field] = []
 
                 response = requests.post(f"{API_URL}/patients", json=patient)
                 if response.status_code == 400 and "already exists" in response.text:
                     print(f"Paciente {patient['patient_id']} ya estaba registrado.")
                 elif not response.ok:
-                    print(f"❌ Error al crear paciente {patient['patient_id']}: {response.status_code} - {response.text}")
+                    print(f"Error al crear paciente {patient['patient_id']}: {response.status_code} - {response.text}")
             except Exception as e:
-                print(f"🛑 Error procesando paciente {patient.get('patient_id', 'UNKNOWN')}: {e}")
+                print(f"Error procesando paciente {patient.get('patient_id', 'UNKNOWN')}: {e}")
 
 
 def create_doctors():
