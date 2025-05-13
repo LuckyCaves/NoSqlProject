@@ -104,6 +104,14 @@ doctor_schema = {
     "dob": datetime
 }
 
+form_template_types = {
+    "template_id": str,
+    "template_name": str,
+    "form_fields": list,
+    "created_at": datetime
+}
+
+
 # Resources
 class PatientResource:
     def __init__(self, db):
@@ -216,11 +224,25 @@ class DoctorResource:
     def __init__(self, db):
         self.db = db
 
+    def _convert_datetimes(self, data):
+        """Helper method to convert datetime objects to ISO format strings"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    self._convert_datetimes(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        self._convert_datetimes(item)
+        return data
+
     async def on_get(self, req, resp, doctor_id):
         """Get doctor by ID"""
         doctor = self.db.doctors.find_one({"doctor_id": doctor_id})
         if doctor:
             doctor['_id'] = str(doctor['_id'])
+            self._convert_datetimes(doctor)
             resp.media = doctor
             resp.status = falcon.HTTP_200
         else:
@@ -256,6 +278,19 @@ class DoctorsResource:
     def __init__(self, db):
         self.db = db
 
+    def _convert_datetimes(self, data):
+        """Helper method to convert datetime objects to ISO format strings"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    self._convert_datetimes(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        self._convert_datetimes(item)
+        return data
+
     async def on_get(self, req, resp):
         """Search doctors by license or name"""
         license = req.get_param('license')
@@ -270,6 +305,7 @@ class DoctorsResource:
         doctors_list = []
         for doctor in doctors:
             doctor['_id'] = str(doctor['_id'])
+            self._convert_datetimes(doctor)
             doctors_list.append(doctor)
         resp.media = doctors_list
         resp.status = falcon.HTTP_200
@@ -412,6 +448,89 @@ class AllergyResource:
                 resp.status = falcon.HTTP_201
             else:
                 resp.status = falcon.HTTP_404
+        except falcon.HTTPBadRequest as e:
+            raise e
+        except Exception as e:
+            raise falcon.HTTPInternalServerError(description=str(e))
+        
+class FormTemplateResource:
+    def __init__(self, db):
+        self.db = db
+
+    def _convert_datetimes(self, data):
+        """Helper method to convert datetime objects to ISO format strings"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    self._convert_datetimes(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        self._convert_datetimes(item)
+        return data
+
+    async def on_get(self, req, resp, template_id):
+        """Get template by ID"""
+        template = self.db.form_templates.find_one({"template_id": template_id})
+        if template:
+            template['_id'] = str(template['_id'])
+            self._convert_datetimes(template)
+            resp.media = template
+            resp.status = falcon.HTTP_200
+        else:
+            resp.status = falcon.HTTP_404
+
+class FormTemplatesResource:
+    def __init__(self, db):
+        self.db = db
+
+    def _convert_datetimes(self, data):
+        """Helper method to convert datetime objects to ISO format strings"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    self._convert_datetimes(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        self._convert_datetimes(item)
+        return data
+
+    async def on_get(self, req, resp):
+        """Get all templates or search by name"""
+        name = req.get_param('name')
+        query = {}
+        if name:
+            query['template_name'] = {'$regex': name, '$options': 'i'}
+        
+        templates = self.db.form_templates.find(query)
+        templates_list = []
+        for template in templates:
+            template['_id'] = str(template['_id'])
+            self._convert_datetimes(template)
+            templates_list.append(template)
+        resp.media = templates_list
+        resp.status = falcon.HTTP_200
+
+    async def on_post(self, req, resp):
+        """Create a new template"""
+        data = await req.media
+        try:
+            # Validación básica
+            if not all(field in data for field in ['template_id', 'template_name', 'form_fields']):
+                raise falcon.HTTPBadRequest("Missing required fields")
+            
+            # Verificar si el template ya existe
+            if self.db.form_templates.find_one({"template_id": data['template_id']}):
+                raise falcon.HTTPBadRequest("Template with this ID already exists")
+            
+            # Insertar en la base de datos
+            result = self.db.form_templates.insert_one(data)
+            data['_id'] = str(result.inserted_id)
+            resp.media = data
+            resp.status = falcon.HTTP_201
         except falcon.HTTPBadRequest as e:
             raise e
         except Exception as e:

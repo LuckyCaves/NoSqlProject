@@ -24,6 +24,7 @@ def list_patients():
         if patients:
             for patient in patients:
                 print(patient)
+                print("--------------------------------------------------")
         else:
             print("No patients found")
     except requests.exceptions.HTTPError as err:
@@ -50,17 +51,40 @@ def get_patient_by_id(patient_id):
         print(f"Error: {err}")
 
 
+def list_doctors():
+    log.info("Listing all doctors...")
+    try:
+        response = requests.get(f"{MEDICAL_RECORDS_API}/doctors")
+        response.raise_for_status()
+        doctors = response.json()
+        if doctors:
+            for doctor in doctors:
+                print(doctor)
+                print("--------------------------------------------------")
+        else:
+            print("No doctors found")
+    except requests.exceptions.HTTPError as err:
+        log.error(f"HTTP error occurred: {err}")
+        print(f"Error: {err}")
+    except Exception as err:
+        log.error(f"Other error occurred: {err}")
+        print(f"Error: {err}")
+
 def get_doctor_by_id(doctor_id):
     log.info(f"Getting doctor with ID: {doctor_id}")
-    response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
-    if response.status_code == 200:
+    try:
+        response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
+        response.raise_for_status()
         print(response.json())
-    elif response.status_code == 404:
-        print(f"Doctor with ID {doctor_id} not found")
-    else:
-        log.error(f"Failed to get doctor: {response.status_code} - {response.text}")
-        print(f"Error: {response.status_code} - {response.text}")
-
+    except requests.exceptions.HTTPError as err:
+        if response.status_code == 404:
+            print(f"Doctor with ID {doctor_id} not found")
+        else:
+            log.error(f"HTTP error occurred: {err}")
+            print(f"Error: {err}")
+    except Exception as err:
+        log.error(f"Other error occurred: {err}")
+        print(f"Error: {err}")
 
 def main():
     log.info(f"Welcome to the Medical Records API client!")
@@ -85,6 +109,9 @@ def main():
     doctor_parser = subparsers.add_parser('doctor', help='Doctor operations')
     doctor_subparsers = doctor_parser.add_subparsers(dest='doctor_command')
 
+    # List doctors
+    list_doctors_parser = doctor_subparsers.add_parser('list', help='List all doctors')
+
     # Get doctor by ID
     get_doctor_parser = doctor_subparsers.add_parser('get', help='Get doctor by ID')
     get_doctor_parser.add_argument('id', help='Doctor ID')
@@ -97,7 +124,9 @@ def main():
         elif args.patient_command == 'get':
             get_patient_by_id(args.id)
     elif args.command == 'doctor':
-        if args.doctor_command == 'get':
+        if args.doctor_command == 'list':
+            list_doctors()
+        elif args.doctor_command == 'get':
             get_doctor_by_id(args.id)
     else:
         parser.print_help()
