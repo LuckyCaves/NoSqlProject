@@ -3,6 +3,9 @@ import argparse
 import logging
 import os
 import requests
+from pprint import pprint
+import json
+from tabulate import tabulate
 
 # Set logger
 log = logging.getLogger()
@@ -23,8 +26,8 @@ def list_patients():
         patients = response.json()
         if patients:
             for patient in patients:
-                print(patient)
-                print("--------------------------------------------------")
+                pprint(patient)
+                print("="*40)
         else:
             print("No patients found")
     except requests.exceptions.HTTPError as err:
@@ -39,7 +42,7 @@ def get_patient_by_id(patient_id):
     try:
         response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
         response.raise_for_status()
-        print(response.json())
+        pprint(response.json())
     except requests.exceptions.HTTPError as err:
         if response.status_code == 404:
             print(f"Patient with ID {patient_id} not found")
@@ -59,8 +62,8 @@ def list_doctors():
         doctors = response.json()
         if doctors:
             for doctor in doctors:
-                print(doctor)
-                print("--------------------------------------------------")
+                pprint(doctor)
+                print("="*40)
         else:
             print("No doctors found")
     except requests.exceptions.HTTPError as err:
@@ -75,7 +78,10 @@ def get_doctor_by_id(doctor_id):
     try:
         response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
         response.raise_for_status()
-        print(response.json())
+        doctor = response.json()
+        print("Doctor details:")
+        table = [[key, value] for key, value in doctor.items()]
+        print(tabulate(table, headers=["Field", "Value"], tablefmt="grid"))
     except requests.exceptions.HTTPError as err:
         if response.status_code == 404:
             print(f"Doctor with ID {doctor_id} not found")
@@ -90,46 +96,35 @@ def main():
     log.info(f"Welcome to the Medical Records API client!")
     log.info(f"Connecting to API at {MEDICAL_RECORDS_API}")
 
-    parser = argparse.ArgumentParser(description='Medical Records API Client')
+    while True:
+        print("\n=== Medical Records API Client ===")
+        print("1. List all patients")
+        print("2. Get patient by ID")
+        print("3. List all doctors")
+        print("4. Get doctor by ID")
+        print("5. Exit")
+        
+        try:
+            choice = int(input("Select an option (1-5): "))
+        except ValueError:
+            print("Invalid input. Please enter a number between 1 and 5.")
+            continue
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
-
-    # Patient commands
-    patient_parser = subparsers.add_parser('patient', help='Patient operations')
-    patient_subparsers = patient_parser.add_subparsers(dest='patient_command')
-
-    # List patients
-    list_patients_parser = patient_subparsers.add_parser('list', help='List all patients')
-
-    # Get patient by ID
-    get_patient_parser = patient_subparsers.add_parser('get', help='Get patient by ID')
-    get_patient_parser.add_argument('id', help='Patient ID')
-
-    # Doctor commands
-    doctor_parser = subparsers.add_parser('doctor', help='Doctor operations')
-    doctor_subparsers = doctor_parser.add_subparsers(dest='doctor_command')
-
-    # List doctors
-    list_doctors_parser = doctor_subparsers.add_parser('list', help='List all doctors')
-
-    # Get doctor by ID
-    get_doctor_parser = doctor_subparsers.add_parser('get', help='Get doctor by ID')
-    get_doctor_parser.add_argument('id', help='Doctor ID')
-
-    args = parser.parse_args()
-
-    if args.command == 'patient':
-        if args.patient_command == 'list':
+        if choice == 1:
             list_patients()
-        elif args.patient_command == 'get':
-            get_patient_by_id(args.id)
-    elif args.command == 'doctor':
-        if args.doctor_command == 'list':
+        elif choice == 2:
+            patient_id = input("Enter the patient ID: ")
+            get_patient_by_id(patient_id)
+        elif choice == 3:
             list_doctors()
-        elif args.doctor_command == 'get':
-            get_doctor_by_id(args.id)
-    else:
-        parser.print_help()
+        elif choice == 4:
+            doctor_id = input("Enter the doctor ID: ")
+            get_doctor_by_id(doctor_id)
+        elif choice == 5:
+            print("Exiting the program. Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please select a valid option.")
 
 
 if __name__ == "__main__":
