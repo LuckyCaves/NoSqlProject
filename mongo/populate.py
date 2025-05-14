@@ -8,7 +8,7 @@ import json
 API_URL = "http://127.0.0.1:8000"
 
 def create_patients():
-    with open("patients.csv", encoding="utf-8") as fd:
+    with open("../data/patients_MONGO.csv", encoding="utf-8") as fd:
         patients_csv = csv.DictReader(fd)
         for patient in patients_csv:
             try:
