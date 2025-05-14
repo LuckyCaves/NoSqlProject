@@ -1,4 +1,4 @@
- appointment_id,appointment_date,patient_id,doctor_id,status,notes
+appointment_id,appointment_date,patient_id,doctor_id,status,notes
 82368000-4d69-11f0-95d7-165afc5d6a85,2025-06-20,P0009,D0004,cancelled,"Patient needs to fast before the appointment"
 fe68c000-5932-11f0-b553-165afc5d6a85,2025-07-05,P0006,D0006,cancelled,"Patient needs to bring a urine sample"
 d70a0000-4efb-11f0-b436-165afc5d6a85,2025-06-22,P0003,D0009,scheduled,"Patient needs to bring a urine sample"

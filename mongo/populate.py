@@ -54,11 +54,13 @@ def create_patients():
 
 
 def create_doctors():
-    with open("doctors.csv", encoding="utf-8") as fd:
+    with open("../data/doctors.csv", encoding="utf-8") as fd:
         doctors_csv = csv.DictReader(fd)
         for doctor in doctors_csv:
             try:
-                doctor['full_name'] = doctor['full_name'].strip()
+                doctor['full_name'] = (doctor['first_name'] + ' ' + doctor['last_name'] ).strip()
+                del doctor['first_name']
+                del doctor['last_name']
                 doctor['specialty'] = doctor['specialty'].strip()
                 doctor["license_number"] = doctor["license_number"].strip()
                 doctor["phone_number"] = doctor["phone_number"].strip()

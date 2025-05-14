@@ -1,11 +1,11 @@
-doctor_id,first_name,last_name,specialty
-D0008,Mia,Taylor,Psychiatrist
-D0006,Isabella,Gonzalez,Oncologist
-D0004,Amelia,Rodriguez,Orthopedic Surgeon
-D0007,Mason,Perez,Ophthalmologist
-D0009,Lucas,Clark,Endocrinologist
-D0010,Harper,Walker,Gastroenterologist
-D0005,Ethan,Lopez,Pediatrician
-D0002,Sophia,Miller,Dermatologist
-D0003,Noah,Garcia,Neurologist
-D0001,Liam,Davis,Cardiologist
+doctor_id,first_name,last_name,specialty,license_number,phone_number,email,university,graduation_year,rfc,address,dob
+D0008,Mia,Taylor,Psychiatrist,PSY837465,555-348-9201,mtaylor@example.com,Harvard University,2011,TAYM800101XYZ,123 Elm St,1980-01-01
+D0006,Isabella,Gonzalez,Oncologist,ONC264738,555-893-7430,igonzalez@example.com,Stanford University,2012,GONI820202ABC,456 Oak St,1982-02-02
+D0004,Amelia,Rodriguez,Orthopedic Surgeon,ORT982374,555-198-3746,arodriguez@example.com,Johns Hopkins University,2010,RODA790303DEF,789 Pine St,1979-03-03
+D0007,Mason,Perez,Ophthalmologist,OPH736481,555-712-9834,mperez@example.com,University of Michigan,2013,PERM850404GHI,321 Cedar St,1985-04-04
+D0009,Lucas,Clark,Endocrinologist,END374920,555-381-7265,lclark@example.com,Yale University,2011,CLAL860505JKL,654 Maple St,1986-05-05
+D0010,Harper,Walker,Gastroenterologist,GAS746291,555-672-1983,hwalker@example.com,UCLA,2014,WALH870606MNO,987 Birch St,1987-06-06
+D0005,Ethan,Lopez,Pediatrician,PED198374,555-492-8371,elopez@example.com,University of Chicago,2009,LOPE780707PQR,246 Spruce St,1978-07-07
+D0002,Sophia,Miller,Dermatologist,DER374862,555-648-3729,smiller@example.com,Columbia University,2010,MILS790808STU,135 Fir St,1979-08-08
+D0003,Noah,Garcia,Neurologist,NEU826374,555-927-3648,ngarcia@example.com,University of Pennsylvania,2011,GARN800909VWX,864 Redwood St,1980-09-09
+D0001,Liam,Davis,Cardiologist,CAR837492,555-374-1982,ldavis@example.com,NYU,2008,DAVL770101YZA,753 Willow St,1977-10-10
