@@ -3,8 +3,9 @@ import logging
 from datetime import datetime
 import datetime as dt
 import random
-import uuid
+from uuid import UUID
 from cassandra.query import BatchStatement
+import csv
 
 log = logging.getLogger()
 
@@ -129,16 +130,6 @@ CREATE_ALERTS_BY_ACCOUNT_DATE_TABLE = """
         alert_type TEXT,
         alert_message TEXT,
         PRIMARY KEY (account_id, alert_id)
-    );
-"""
-
-CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE = """
-    CREATE TABLE IF NOT EXISTS actions_by_account_date (
-        action_id TIMEUUID,
-        account_id TEXT,
-        date DATE,
-        action_type TEXT,
-        PRIMARY KEY (account_id, date, action_id)
     );
 """
 
@@ -385,7 +376,6 @@ def create_schema(session):
     log.info("Creating Cassandra model schema")
     session.execute(CREATE_PATIENTS_TABLE)
     session.execute(CREATE_DOCTORS_TABLE)
-    # session.execute(CREATE_APPOINTMENTS_BY_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_PATIENT_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_DOCTOR_DATE_TABLE)
     session.execute(CREATE_APPOINTMENTS_BY_DATE_PD_TABLE)
@@ -393,7 +383,6 @@ def create_schema(session):
     session.execute(CREATE_VITAL_SIGNS_BY_ACCOUNT_TYPE_DATE_TABLE)
     session.execute(CREATE_VITAL_SIGNS_BY_ACCOUNT_DATE_TABLE)
     session.execute(CREATE_ALERTS_BY_ACCOUNT_DATE_TABLE)
-    session.execute(CREATE_ACTIONS_BY_ACCOUNT_DATE_TABLE) #Probalemente no se necesite
 
 patientsData = [
     {"id": "P0001", "first_name": "John", "last_name": "Doe", "username": "jdoe"},
@@ -467,77 +456,144 @@ def bulk_insert(session):
     alerts=100
 
     # Generate patients
-    data = []
-    for patient in patientsData:
-        patient_uuid = patient["id"]
-        patients.append(patient_uuid)
-        dob = random_date(datetime(1950, 1, 1), datetime(2008, 1, 1))
-        data.append((patient_uuid, patient["first_name"], patient["last_name"], dob))
+    # data = []
+    # for patient in patientsData:
+    #     patient_uuid = patient["id"]
+    #     patients.append(patient_uuid)
+    #     dob = random_date(datetime(1950, 1, 1), datetime(2008, 1, 1))
+    #     data.append((patient_uuid, patient["first_name"], patient["last_name"], dob))
+    # execute_batch(session, pat_stmt, data)
+
+    # Load patients from CSV
+    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\patients.csv", mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        data = []
+        for row in csv_reader:
+            patient_uuid = row['patient_id']
+            patients.append(patient_uuid)
+            dob = datetime.strptime(row['dob'], '%Y-%m-%d').date()
+            data.append((patient_uuid, row['first_name'], row['last_name'], dob))
     execute_batch(session, pat_stmt, data)
 
-    # Generate doctors
-    data = []
-    for index, doctor in enumerate(doctorsData):
-        doctor_uuid = doctor["id"]
-        doctors.append(doctor_uuid)
-        data.append((doctor_uuid, doctor["first_name"], doctor["last_name"], specialists[index]))
+    # Load doctors from CSV
+    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\doctors.csv", mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        data = []
+        for row in csv_reader:
+            doctor_uuid = row['doctor_id']
+            doctors.append(doctor_uuid)
+            specialty = row['specialty']
+            data.append((patient_uuid, row['first_name'], row['last_name'], specialty))
     execute_batch(session, doc_stmt, data)
 
-    # Generate appointments
-    data = []
-    for i in range(appointments):
-        app_date = random_date(datetime(2025, 1, 1), datetime(2025, 12, 31))
-        app_id = random_dateUUID(app_date)
-        patient = random.choice(patients)
-        doctor = random.choice(doctors)
+    # Generate doctors
+    # data = []
+    # for index, doctor in enumerate(doctorsData):
+    #     doctor_uuid = doctor["id"]
+    #     doctors.append(doctor_uuid)
+    #     data.append((doctor_uuid, doctor["first_name"], doctor["last_name"], specialists[index]))
+    # execute_batch(session, doc_stmt, data)
 
-        status = random.choice(['scheduled', 'completed', 'cancelled'])
-        notes = random.choice(['', 'Patient needs to fast before the appointment', 'Patient needs to bring a urine sample'])
-        data.append((app_id, app_date, patient, doctor, status, notes))
+    # Load appointments from CSV
+    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\appointments.csv", mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        data = []
+        for row in csv_reader:
+            app_date = datetime.strptime(row['appointment_date'], '%Y-%m-%d').date()
+            app_id = UUID(row['appointment_id'])
+            patient = row['patient_id']
+            doctor = row['doctor_id']
+            status = row['status']
+            notes = row['notes']
+            data.append((app_id, app_date, patient, doctor, status, notes))
     execute_batch(session, appbpt_stmt, data)
     execute_batch(session, appbdt_stmt, data)
     execute_batch(session, appbpd_stmt, data)
-
-    #Generate accounts doctors
-    data = []
-    for index, patient in enumerate(patients):
-        account_id = patients[index]
-        patientsAcc.append(account_id)
-        registration_date = random_date(datetime(2024, 1, 1), datetime(2025, 1, 1))
-        registration_date = random_dateUUID(registration_date)
-        data.append((account_id, patientsData[index]["username"], patientsData[index]["first_name"], patientsData[index]["last_name"], registration_date, 'patient'))
-    execute_batch(session, acc_stmt, data)
     
-    # Generate accounts doctors
-    data = []
-    for index, doctor in enumerate(doctors):
-        account_id = doctors[index]
-        doctorsAcc.append(account_id)
-        registration_date = random_date(datetime(2024, 1, 1), datetime(2025, 1, 1))
-        registration_date = random_dateUUID(registration_date)
-        data.append((account_id, doctorsData[index]["username"], doctorsData[index]["first_name"], doctorsData[index]["last_name"], registration_date, 'doctor'))
+    # data = []
+    # for i in range(appointments):
+    #     app_date = random_date(datetime(2025, 1, 1), datetime(2025, 12, 31))
+    #     app_id = random_dateUUID(app_date)
+    #     patient = random.choice(patients)
+    #     doctor = random.choice(doctors)
+
+    #     status = random.choice(['scheduled', 'completed', 'cancelled'])
+    #     notes = random.choice(['', 'Patient needs to fast before the appointment', 'Patient needs to bring a urine sample'])
+    #     data.append((app_id, app_date, patient, doctor, status, notes))
+    # execute_batch(session, appbpt_stmt, data)
+    # execute_batch(session, appbdt_stmt, data)
+    # execute_batch(session, appbpd_stmt, data)
+
+    # Generate accounts from accounts CSV
+    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\accounts.csv", mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        data = []
+        for row in csv_reader:
+            account_id = row['account_id']
+            if row['role'] == 'patient':
+                patientsAcc.append(account_id)
+            elif row['role'] == 'doctor':
+                doctorsAcc.append(account_id)
+            registration_date = UUID(row['registration_date'])
+            data.append((account_id, row['username'], row['first_name'], row['last_name'], registration_date, row['role']))
     execute_batch(session, acc_stmt, data)
 
-    # Generate vital signs
-    data = []
-    for i in range(vital_signs):
-        account = random.choice(patientsAcc)
-        vital_sign_type = random.choice(['blood pressure', 'heart rate', 'steps', 'oxygenation', 'temperature'])
-        if vital_sign_type == 'blood pressure':
-            vital_sign_value = random.uniform(60, 200)
-        elif vital_sign_type == 'heart rate':
-            vital_sign_value = random.uniform(30, 250)
-        elif vital_sign_type == 'steps':
-            vital_sign_value = random.uniform(0, 20000)
-        elif vital_sign_type == 'oxygenation':
-            vital_sign_value = random.uniform(75, 100)
-        elif vital_sign_type == 'temperature':
-            vital_sign_value = random.uniform(35, 39)
-        vital_sign_date = random_date(datetime(2020, 1, 1), datetime(2025, 1, 1))
-        vital_sign_id = random_dateUUID(vital_sign_date)
-        data.append((vital_sign_id, account, vital_sign_type, vital_sign_value, vital_sign_date))
+    #Generate accounts patients
+    # data = []
+    # for index, patient in enumerate(patients):
+    #     account_id = patients[index]
+    #     patientsAcc.append(account_id)
+    #     registration_date = random_date(datetime(2024, 1, 1), datetime(2025, 1, 1))
+    #     registration_date = random_dateUUID(registration_date)
+    #     data.append((account_id, patientsData[index]["username"], patientsData[index]["first_name"], patientsData[index]["last_name"], registration_date, 'patient'))
+    # execute_batch(session, acc_stmt, data)
+    
+    # # Generate accounts doctors
+    # data = []
+    # for index, doctor in enumerate(doctors):
+    #     account_id = doctors[index]
+    #     doctorsAcc.append(account_id)
+    #     registration_date = random_date(datetime(2024, 1, 1), datetime(2025, 1, 1))
+    #     registration_date = random_dateUUID(registration_date)
+    #     data.append((account_id, doctorsData[index]["username"], doctorsData[index]["first_name"], doctorsData[index]["last_name"], registration_date, 'doctor'))
+    # execute_batch(session, acc_stmt, data)
+
+    # Load vital signs from CSV
+    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\vital_signs.csv", mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        data = []
+        for row in csv_reader:
+            vital_sign_date = datetime.strptime(row['date'], '%Y-%m-%d').date()
+            # vital_sign_date = row['date']
+            date = datetime.strptime(row['vital_sign_id'],'%Y-%m-%d %H:%M:%S') + dt.timedelta(hours=6)
+            vital_sign_id = random_dateUUID(date)
+            account_id = row['account_id']
+            vital_sign_type = row['type']
+            vital_sign_value = float(row['value'])
+            data.append((vital_sign_id, account_id, vital_sign_type, vital_sign_value, vital_sign_date))
     execute_batch(session, vs_stmt, data)
     execute_batch(session, vsad_stmt, data)
+
+    # Generate vital signs
+    # data = []
+    # for i in range(vital_signs):
+    #     account = random.choice(patientsAcc)
+    #     vital_sign_type = random.choice(['blood pressure', 'heart rate', 'steps', 'oxygenation', 'temperature'])
+    #     if vital_sign_type == 'blood pressure':
+    #         vital_sign_value = random.uniform(60, 200)
+    #     elif vital_sign_type == 'heart rate':
+    #         vital_sign_value = random.uniform(30, 250)
+    #     elif vital_sign_type == 'steps':
+    #         vital_sign_value = random.uniform(0, 20000)
+    #     elif vital_sign_type == 'oxygenation':
+    #         vital_sign_value = random.uniform(75, 100)
+    #     elif vital_sign_type == 'temperature':
+    #         vital_sign_value = random.uniform(35, 39)
+    #     vital_sign_date = random_date(datetime(2020, 1, 1), datetime(2025, 1, 1))
+    #     vital_sign_id = random_dateUUID(vital_sign_date)
+    #     data.append((vital_sign_id, account, vital_sign_type, vital_sign_value, vital_sign_date))
+    # execute_batch(session, vs_stmt, data)
+    # execute_batch(session, vsad_stmt, data)
 
     # Generate alerts
     data = []
@@ -550,6 +606,19 @@ def bulk_insert(session):
         data.append((alert_id, account, alert_date, alert_type, alert_message))
     execute_batch(session, alert_stmt, data)
 
+def check_vital_signs(type, value):
+
+    if type == 'blood pressure':
+        return value < 90 or value > 140
+    elif type == 'heart rate':
+        return value < 60 or value > 100
+    elif type == 'oxygenation':
+        return value < 95 or value > 100
+    elif type == 'temperature':
+        return value < 36.1 or value > 37.2
+    else:
+        return False
+
 def create_account(session, accountData):
     stmt = session.prepare(INSERT_ACCOUNT)
 
@@ -560,7 +629,6 @@ def create_account(session, accountData):
 def insert_patient(session, patientData):
     stmt = session.prepare(INSERT_PATIENT)
     insertPatientData = [patientData[0], patientData[1], patientData[2], patientData[3]]
-    print(insertPatientData)
     session.execute(stmt, insertPatientData)
     create_account(session, patientData)
 
@@ -586,19 +654,23 @@ def update_appointment(session, appointmentData):
         appbpt_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT_N)
         appbdt_stmt = session.prepare(UPDATE_APPOINTMENT_DOCTOR_N)
         appbpd_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT_DOCTOR_N)
+        updateByPatient = [appointmentData[4], appointmentData[0], appointmentData[1]]
+        updateByDoctor = [appointmentData[4], appointmentData[0], appointmentData[2]]
+        updateByPatientDoctor = [appointmentData[4], appointmentData[0], appointmentData[1], appointmentData[2]]
     elif appointmentData[4] == "":
         appbpt_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT_S)
         appbdt_stmt = session.prepare(UPDATE_APPOINTMENT_DOCTOR_S)
         appbpd_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT_DOCTOR_S)
+        updateByPatient = [appointmentData[3], appointmentData[0], appointmentData[1]]
+        updateByDoctor = [appointmentData[3], appointmentData[0], appointmentData[2]]
+        updateByPatientDoctor = [appointmentData[3], appointmentData[0], appointmentData[1], appointmentData[2]]
     else:
         appbpt_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT)
         appbdt_stmt = session.prepare(UPDATE_APPOINTMENT_DOCTOR)
         appbpd_stmt = session.prepare(UPDATE_APPOINTMENT_PATIENT_DOCTOR)
-
-
-    updateByPatient = [appointmentData[3], appointmentData[4], appointmentData[0], appointmentData[1]]
-    updateByDoctor = [appointmentData[3], appointmentData[4], appointmentData[0], appointmentData[2]]
-    updateByPatientDoctor = [appointmentData[3], appointmentData[4], appointmentData[0], appointmentData[1], appointmentData[2]]
+        updateByPatient = [appointmentData[3], appointmentData[4], appointmentData[0], appointmentData[1]]
+        updateByDoctor = [appointmentData[3], appointmentData[4], appointmentData[0], appointmentData[2]]
+        updateByPatientDoctor = [appointmentData[3], appointmentData[4], appointmentData[0], appointmentData[1], appointmentData[2]]
 
     execute_batch(session, appbpt_stmt, [updateByPatient])
     execute_batch(session, appbdt_stmt, [updateByDoctor])
@@ -684,6 +756,15 @@ def get_appointments_by_patient_doctor(session, patient_id, doctor_id, appointme
 def insert_vital_sign(session, vitalSignData):
     vs_stmt = session.prepare(INSERT_VITAL_SIGN_BY_ACCOUNT_DATE)
     vsad_stmt = session.prepare(INSERT_VITAL_SIGN_BY_ACCOUNT_TYPE_DATE)
+
+    if check_vital_signs(vitalSignData[2], vitalSignData[3]):
+        alertData = ['']*5
+        alertData[0] = random_dateUUID(datetime.now() + dt.timedelta(hours=6))
+        alertData[1] = vitalSignData[1]
+        alertData[2] = vitalSignData[4]
+        alertData[3] = "Vital Signs"
+        alertData[4] = "You're vital signs are out of bounds take a moment"
+        insert_alert(session, alertData)
 
     execute_batch(session, vs_stmt, [vitalSignData])
     execute_batch(session, vsad_stmt, [vitalSignData])

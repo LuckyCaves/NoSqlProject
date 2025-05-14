@@ -84,6 +84,7 @@ def printMenuPatient():
     for key in mm_options.keys():
         print(key, '--', mm_options[key])
 
+
 def createAppointment(session):
     appointmentData = [""] * 6
     
@@ -96,11 +97,10 @@ def createAppointment(session):
     appointmentData[0] = model.random_dateUUID(date)
     appointmentData[4] = "Scheduled"
 
-    alertDate = datetime.strptime(strDate, '%Y-%m-%d %H:%M:%S')
     alertData = ['']*5
-    alertData[0] = appointmentData[0]
-    alertData[1] = appointmentData[2]
-    alertData[2] = appointmentData[1].date()
+    alertData[0] = appointmentData[0] #date uuid
+    alertData[1] = appointmentData[2] #patientID
+    alertData[2] = appointmentData[1].date() #date
     alertData[3] = "Appointment"
     alertData[4] = f"You have an appointment scheduled with doctor {appointmentData[3]}"
 
@@ -158,11 +158,13 @@ def appDoctor(session, accountData):
         option = int(input("Option: "))
         if option == 0:
             # Create a new patient
+            os.system("cls")
             print("**** Create a new patient ****")
             newPatient(session)
             pass
         elif option == 1:
             # View appointments
+            os.system("cls")
             print("**** View appointments ****")
             date = input("Enter date [yyyy-mm-dd] (leave empty for today):")
             patientId = input("Enter patient ID (leave empty for all):")
@@ -179,16 +181,19 @@ def appDoctor(session, accountData):
             pass
         elif option == 2:
             # Update appointment
+            os.system("cls")
             print("**** Update appointment ****")
             updateAppointment(session, accountData['account_id'])
             pass
         elif option == 3:
             print("**** Create appointment ****")
+            os.system("cls")
             createAppointment(session)
             # Create appointment
             pass
         elif option == 4:
             # View vital signs
+            os.system("cls")
             print("**** View vital signs ****")
             dateRange = handle_date_ranges()
             vitalSignType = input("Enter vital sign type (leave empty for all):")
@@ -202,13 +207,17 @@ def appDoctor(session, accountData):
             pass
         elif option == 5:
             # Delete vital signs
+            os.system("cls")
             print("**** Delete vital signs ****")
             dateRange = handle_date_ranges()
             patientId = input("Enter patient ID: ")
             model.delete_vital_signs(session, patientId, dateRange[0], dateRange[1])
+
+            print("*** Vital signs deleted ***")
             pass
         elif option == 6:
             # Create a new doctor
+            os.system("cls")
             print("**** Create a new doctor ****")
             newDoctor(session)
             pass
