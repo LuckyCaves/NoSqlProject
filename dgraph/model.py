@@ -36,7 +36,6 @@ def set_schema(client):
 
     team_id: string @index(exact) .
     formation_date: datetime .
-    lead_doctor_id: string @index(exact) .
     purpose: string .
 
     disease_id: string @index(exact) .
@@ -47,7 +46,6 @@ def set_schema(client):
     rehabilitation_id: string @index(exact) .
     rehabilitation_duration: int @index(int) .
     condition_severity: string @index(exact) .
-    completion_status: string @index(exact) .
 
     
     family_relation: [uid] @reverse .
@@ -60,8 +58,8 @@ def set_schema(client):
     has_medication: [uid] .
     interact_with: [uid] @reverse .
     cause: [uid] .
-    treats: [uid] .
-    diagnosed: uid .
+    treats: [uid] @reverse .
+    diagnosed: [uid] .
     require: [uid] .
   
 
@@ -75,7 +73,8 @@ def set_schema(client):
 
       family_relation
       has_symptom
-      attends
+      ~attends
+      ~treats
     }
 
     type Doctor {
@@ -131,7 +130,6 @@ def set_schema(client):
       team_id
       name
       formation_date
-      lead_doctor_id
       purpose
 
       treats
@@ -157,10 +155,7 @@ def set_schema(client):
       rehabilitation_id
       rehabilitation_duration
       condition_severity
-      completion_status
     }
-
-
     """
     return client.alter(pydgraph.Operation(schema=schema))
 
@@ -636,270 +631,400 @@ def create_data(client):
 
 
 
-def get_patients_by_doctor_name(client, doctor_name):
+def get_doctors_for_patient(client, patient_id_value):
     query = """
-    query patientsByDoctor($name: string) {
-        doctor(func: allofterms(name, $name)) {
-            name
-            attends {
-                name
-            }
+    query getDoctors($patient_id: string) {
+      patient(func: eq(patient_id, $patient_id)) {
+        uid
+        patient_id
+        name
+        ~attends { 
+          uid
+          doctor_id
+          name
+          license_number
+          years_experience
         }
+      }
     }
     """
-    variables = {'$name': doctor_name}
+    variables = {'$patient_id': patient_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_doctors_by_patient_name(client, patient_name):
+def get_patients_for_doctor(client, doctor_id_value):
     query = """
-    query doctorsByPatient($name: string) {
-        patient(func: allofterms(name, $name)) {
-            name
-            ~attends {
-                name
-            }
+    query getPatients($doctor_id: string) {
+      doctor(func: eq(doctor_id, $doctor_id)) {
+        uid
+        doctor_id
+        name
+        attends { 
+          uid
+          patient_id
+          name
+          date_of_birth
+          gender
+          blood_type
         }
+      }
     }
     """
-    variables = {'$name': patient_name}
+    variables = {'$doctor_id': doctor_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_patient_symptoms_and_treatments(client, patient_name):
+
+def get_patient_health_summary(client, patient_id_value):
     query = """
-    query patientSymptoms($name: string) {
-        patient(func: allofterms(name, $name)) {
+    query getPatientSummary($patient_id: string) {
+      patient(func: eq(patient_id, $patient_id)) {
+        uid
+        patient_id
+        name
+        
+        has_symptom { 
+          uid
+          symptom_id
+          name
+          description
+          severity
+          
+          diagnosed { 
+            uid
+            disease_id
             name
-            has_symptom {
+            hereditary_risk
+            description
+            
+            ~cure { 
+              uid
+              treatment_id
+              name
+              description
+              start_date
+              end_date
+              effectiveness_score
+              
+              has_medication { 
+                uid
+                medication_id
                 name
-                description
-                diagnosed {
-                    name
-                    description
-                    cure {
-                        name
-                        start_date
-                        end_date
-                    }
-                }
+                dosage
+                frequency
+                route
+              }
             }
+          }
         }
+      }
     }
     """
-    variables = {'$name': patient_name}
+    variables = {'$patient_id': patient_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_recommended_doctors_for_patient_diagnoses(client, patient_name):
+
+def get_doctors_by_specialty(client, specialty_id_value):
     query = """
-    query recommendedDoctors($name: string) {
-        patient(func: allofterms(name, $name)) {
-            name
-            has_symptom {
-                diagnosed {
-                    name
-                    ~recomends {
-                        name
-                        specializes {
-                            name
-                        }
-                    }
-                }
-            }
+    query FindDoctorsBySpecialty($specialty_id: string!) {
+      specialty_doctors(func: eq(specialty_id, $specialty_id)) {
+        uid
+        specialty_id
+        name_of_specialty: name 
+        
+        doctors_in_specialty: ~specializes @filter(has(doctor_id)) { 
+          uid
+          doctor_id
+          name
+          license_number
+          years_experience
         }
+      }
     }
     """
-    variables = {'$name': patient_name}
+    variables = {
+        '$specialty_id': specialty_id_value
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) # Opcional: para depuración
 
 
-def get_similar_diagnosis_treatments(client, diagnosis_name):
+
+def get_treatments_and_medications_for_disease_by_id(client, disease_id_value):
     query = """
-    query similarDiagnosis($name: string) {
-        similar_diagnoses(func: allofterms(name, $name)) @cascade {
-            name
-            cure {
-                name
-                start_date
-                effectiveness_score
-            }
+    query FindTreatmentsForDiseaseById($diseaseId: string!) {
+      disease_treatment_info(func: eq(disease_id, $diseaseId)) { 
+        uid
+        disease_id
+        name_of_disease: name 
+        description_of_disease: description 
+
+        recommended_treatments: ~cure @filter(has(treatment_id)) {
+          uid
+          treatment_id
+          name_of_treatment: name
+          description_of_treatment: description
+          start_date
+          end_date
+          effectiveness_score
+
+          medications_in_treatment: has_medication @filter(has(medication_id)) {
+            uid
+            medication_id
+            name_of_medication: name
+            dosage
+            frequency
+            route
+          }
         }
+      }
     }
     """
-    variables = {'$name': diagnosis_name}
+    variables = {
+        '$diseaseId': disease_id_value 
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_medications_and_causes_for_treatment(client, treatment_name):
+def get_side_effects_for_medication(client, medication_id_value):
     query = """
-    query treatmentMedications($name: string) {
-        treatment(func: allofterms(name, $name)) {
-            name
-            has_medication {
-                name
-                cause {
-                    name
-                    severity
-                }
-            }
+    query FindSideEffects($med_id: string!) {
+      medication_info(func: eq(medication_id, $med_id)) {
+        uid
+        medication_id
+        name_of_medication: name 
+        dosage
+        frequency
+        route
+        reported_side_effects: cause @filter(has(effect_id)) { 
+          uid
+          effect_id
+          name_of_side_effect: name
+          description_of_side_effect: description
+          severity
         }
+      }
     }
     """
-    variables = {'$name': treatment_name}
+    variables = {
+        '$med_id': medication_id_value
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_patient_medical_teams(client, patient_name):
+def get_team_composition_and_patients(client, team_id_value):
     query = """
-    query patientTeams($name: string) {
-        patient(func: allofterms(name, $name)) {
-            name
-            ~treats {
-                name
-                purpose
-                formation_date
-                lead_doctor_id
-                ~part_of {
-                    name
-                    specializes {
-                        name
-                    }
-                }
-            }
+    query GetTeamInfo($team_id_filter: string!) {
+      team_details(func: eq(team_id, $team_id_filter)) {
+        uid
+        team_id
+        name_of_team: name
+        formation_date
+        purpose
+
+        patients_treated_by_team: treats @filter(has(patient_id)) {
+          uid
+          patient_id
+          name_of_patient: name
         }
+
+        doctors_in_team: ~part_of @filter(has(doctor_id)) {
+          uid
+          doctor_id
+          name_of_doctor: name
+        }
+      }
     }
     """
-    variables = {'$name': patient_name}
+    variables = {
+        '$team_id_filter': team_id_value
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) # Opcional: para depuración
 
 
-def get_family_hereditary_diseases(client, patient_name):
+def check_family_hereditary_disease_risk(client, patient_id_value):
     query = """
-    query familyDiseases($name: string) {
-        patient(func: allofterms(name, $name)) {
-            name
-            family_relation {
-                name
-                has_symptom {
-                    diagnosed {
-                        name
-                        hereditary_risk
-                    }
-                }
+    query CheckFamilyRiskSimple($patientId: string!) {
+      initial_patient_data(func: eq(patient_id, $patientId)) {
+        uid
+        patient_id
+        name_patient: name
+        
+        family_members_with_hereditary_risk: family_relation @filter(has(patient_id)) @cascade {
+          uid
+          patient_id_family: patient_id
+          name_family: name
+          
+          symptoms_of_family_member: has_symptom @filter(has(symptom_id)) @cascade {
+            diseases_with_hereditary_risk: diagnosed 
+                @filter(has(disease_id) AND gt(hereditary_risk, 0.0)) { 
+              uid
+              disease_id
+              name_disease: name
+              hereditary_risk
+              description_disease: description
             }
+          }
         }
+      }
     }
     """
-    variables = {'$name': patient_name}
+    variables = {
+        '$patientId': patient_id_value
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_medication_interactions(client, medication_name):
+def get_medication_interactions(client, medication_id_value):
     query = """
-    query medicationInteractions($name: string) {
-        medication(func: allofterms(name, $name)) {
-            name
-            interacts_with {
-                name
-            }
+    query FindMedicationInteractions($medId: string!) {
+      medication_interaction_details(func: eq(medication_id, $medId)) {
+        uid
+        medication_id
+        name_of_source_medication: name 
+        dosage
+        frequency
+        route
+
+        interacts_with: interact_with @filter(has(medication_id)) { 
+          uid
+          medication_id
+          name_of_interacting_medication: name
         }
+      }
     }
     """
-    variables = {'$name': medication_name}
+    variables = {
+        '$medId': medication_id_value
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_effective_treatments(client):
+
+def get_treatment_effectiveness(client, treatment_id_value):
     query = """
-    query effectiveTreatments {
-        treatments(func: type(Treatment)) @filter(gt(effectiveness_score, 0.7)) {
-            name
-            effectiveness_score
-            cure {
-                name
-            }
-        }
+    query FindTreatmentEffectiveness($treatId: string!) {
+      treatment_effectiveness_info(func: eq(treatment_id, $treatId)) {
+        uid
+        treatment_id
+        name_of_treatment: name 
+        effectiveness_score     
+      }
     }
     """
-    res = client.txn(read_only=True).query(query)
-    data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
-
-
-def get_symptoms_and_related_cures(client):
-    query = """
-    query symptomsAndCures {
-        symptoms(func: type(Symptom)) {
-            name
-            diagnosed {
-                name
-                cure {
-                    name
-                }
-            }
-        }
+    variables = {
+        '$treatId': treatment_id_value
     }
-    """
-    res = client.txn(read_only=True).query(query)
-    data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
-
-
-def get_diagnoses_recommended_by_doctor(client, doctor_name):
-    query = """
-    query doctorRecommendations($name: string) {
-        doctor(func: allofterms(name, $name)) {
-            name
-            recomends {
-                name
-            }
-        }
-    }
-    """
-    variables = {'$name': doctor_name}
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)) 
 
 
-def get_patient_rehabilitation_info(client, patient_name):
+def get_diseases_for_symptom(client, symptom_id_value):
     query = """
-    query patientRehabInfo($name: string) {
-        patient(func: allofterms(name, $name)) {
-            name
-            has_symptom {
-                diagnosed {
-                    name
-                    ~rehabilitation_id {
-                        rehabilitation_duration
-                        condition_severity
-                        completion_status
-                    }
-                }
-            }
+    query FindDiseasesForSymptom($symptomId: string!) {
+      symptom_details(func: eq(symptom_id, $symptomId)) {
+        uid
+        symptom_id
+        name_of_symptom: name         
+        description_of_symptom: description 
+
+        diagnosed_diseases: diagnosed @filter(has(disease_id)) { 
+          uid
+          disease_id
+          name_of_disease: name
+          description_of_disease: description
         }
+      }
     }
     """
-    variables = {'$name': patient_name}
+    variables = {
+        '$symptomId': symptom_id_value
+    }
+    
+    res = client.txn(read_only=True).query(query, variables=variables)
+    data = json.loads(res.json)
+    print(json.dumps(data, indent=2)) 
+
+
+def get_doctors_recommended_by_doctor(client, doctor_id_value):
+    query = """
+    query FindDoctorRecommendations($docId: string!) {
+      recommending_doctor_details(func: eq(doctor_id, $docId)) {
+        uid
+        doctor_id
+        name_of_recommending_doctor: name 
+
+        recommended_doctors_list: recomends @filter(has(doctor_id)) {
+          uid
+          doctor_id
+          name_of_recommended_doctor: name
+          license_number
+          years_experience
+          specializes {
+            uid
+            specialty_id
+            name_of_specialty: name
+          }
+        }
+      }
+    }
+    """
+    variables = {
+        '$docId': doctor_id_value
+    }
+    
+    res = client.txn(read_only=True).query(query, variables=variables)
+    data = json.loads(res.json)
+    print(json.dumps(data, indent=2)) 
+
+
+def get_treatment_rehabilitation_info(client, treatment_id_value):
+    query = """
+    query FindTreatmentRehabTime($treatId: string!) {
+      treatment_rehab_details(func: eq(treatment_id, $treatId)) {
+        uid
+        treatment_id
+        name_of_treatment: name 
+
+        required_rehabilitation_time: require @filter(has(rehabilitation_id)) { 
+          uid
+          rehabilitation_id
+          rehabilitation_duration
+          condition_severity
+        }
+      }
+    }
+    """
+    variables = {
+        '$treatId': treatment_id_value
+    }
+    
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
     print(json.dumps(data, indent=2))
