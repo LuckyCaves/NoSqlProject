@@ -1,0 +1,11 @@
+medication_id,name,dosage,frequency,route
+M0001,Amoxicillin,500 mg,Cada 8 horas,Oral
+M0002,Lisinopril,10 mg,Una vez al día,Oral
+M0003,Atorvastatin,20 mg,Una vez al día por la noche,Oral
+M0004,Metformin,850 mg,Dos veces al día con las comidas,Oral
+M0005,Salbutamol Inhaler,100 mcg por inhalación,Según sea necesario (máx. 4 veces al día),Inhalación
+M0006,Ibuprofen,400 mg,Cada 6-8 horas según sea necesario para el dolor,Oral
+M0007,Levothyroxine,75 mcg,Una vez al día por la mañana,Oral
+M0008,Omeprazole,20 mg,Una vez al día antes del desayuno,Oral
+M0009,Insulin Glargine,10 unidades,Una vez al día a la misma hora,Subcutánea
+M0010,Warfarin,5 mg (dosis ajustada según INR),Una vez al día,Oral

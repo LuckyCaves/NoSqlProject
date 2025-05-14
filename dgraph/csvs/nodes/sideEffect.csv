@@ -1,0 +1,11 @@
+effect_id,name,description,severity
+SE001,Náuseas,Sensación de malestar estomacal con ganas de vomitar.,Leve
+SE002,Dolor de cabeza,Dolor en cualquier parte de la cabeza, que puede variar de leve a intenso.,Moderado
+SE003,Mareos,Sensación de aturdimiento, inestabilidad o de que el entorno gira.,Leve
+SE004,Fatiga,Sensación abrumadora de cansancio, falta de energía y agotamiento.,Moderado
+SE005,Insomnio,Dificultad para conciliar el sueño o para permanecer dormido.,Leve
+SE006,Erupción cutánea,Cambio notable en la textura o color de la piel, a menudo con picazón o dolor.,Moderado
+SE007,Diarrea,Heces blandas y acuosas que ocurren con más frecuencia de lo habitual.,Leve
+SE008,Boca seca,Condición en la que las glándulas salivales no producen suficiente saliva.,Leve
+SE009,Visión borrosa,Pérdida de la agudeza visual, haciendo que los objetos aparezcan desenfocados y confusos.,Moderado
+SE010,Reacción alérgica grave,Respuesta alérgica que puede poner en peligro la vida, con dificultad para respirar e hinchazón.,Grave

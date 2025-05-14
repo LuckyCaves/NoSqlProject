@@ -1,0 +1,11 @@
+rehabilitation_id,rehabilitation_duration,condition_severity
+RHB001,14,Leve
+RHB002,30,Leve
+RHB003,45,Moderado
+RHB004,60,Moderado
+RHB005,90,Moderado
+RHB006,120,Grave
+RHB007,180,Grave
+RHB008,7,Leve
+RHB009,240,Grave
+RHB010,365,Grave

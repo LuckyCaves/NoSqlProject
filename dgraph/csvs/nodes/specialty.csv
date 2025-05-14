@@ -1,0 +1,11 @@
+specialty_id,name,description
+S0001,Psychiatrist,Medical doctor who specializes in mental health
+S0002,Oncologist,Medical professional who specializes in the diagnosis and treatment of cancer
+S0003,Orthopedic,Medical professional who focuses on treating the musculoskeletal system
+S0004,Ophthalmologist,Medical doctor who specializes in eye and vision care
+S0005,Endocrinologist,Medical doctor who specializes in the diagnosis and treatment of hormone-related health conditions
+S0006,Gastroenterologist,Medical specialist who focuses on the health of the digestive system and the liver
+S0007,Pediatrician,Medical doctor who specializes in providing care for children from birth through childhood
+S0008,Dermatologist,Medical doctor who specializes in diagnosing and treating conditions that affect the skin, hair, and nails
+S0009,Neurologist,Medical doctor who specializes in identifying and treating diseases of the nervous system
+S0010,Cardiologist,Medical doctor who specializes in the study or treatment of heart diseases and heart abnormalities

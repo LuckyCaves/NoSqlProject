@@ -1,0 +1,11 @@
+patient_id,name,date_of_birth,gender,blood_type
+P0006,Sophia Brown,1966-02-20,M,B-
+P0004,Emma White,1976-03-01,M,A-
+P0005,David Martinez,1989-11-20,M,B+
+P0001,John Doe,1991-09-19,M,B-
+P0007,Michael Anderson,1972-04-09,M,B+
+P0003,Bob Johnson,1960-09-25,F,B+
+P0002,Alice Smith,1984-04-30,M,A+
+P0008,Olivia Thomas,1981-09-21,F,A+
+P0009,James Harris,1956-01-16,F,B-
+P0010,Charlotte Wilson,1994-09-24,F,O-

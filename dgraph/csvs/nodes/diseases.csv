@@ -1,0 +1,11 @@
+disease_id,name,hereditary_risk,description
+ENF001,Diabetes Mellitus Tipo 2,0.60,Trastorno metabólico con altos niveles de glucosa en sangre debido a resistencia a la insulina o deficiencia de esta.
+ENF002,Hipertensión Arterial Esencial,0.50,Presión arterial persistentemente elevada en las arterias sin causa secundaria identificable.
+ENF003,Asma Bronquial,0.40,Enfermedad crónica inflamatoria de las vías respiratorias que dificulta la respiración.
+ENF004,Artritis Reumatoide,0.30,Enfermedad autoinmune crónica que causa inflamación y dolor en las articulaciones.
+ENF005,Enfermedad de Alzheimer,0.25,Trastorno neurodegenerativo progresivo que afecta la memoria y otras funciones mentales.
+ENF006,Depresión Mayor,0.35,Trastorno del estado de ánimo que causa tristeza persistente y pérdida de interés.
+ENF007,Migraña Crónica,0.55,Dolores de cabeza recurrentes e intensos, a menudo con náuseas y sensibilidad sensorial.
+ENF008,Enfermedad Celíaca,0.70,Trastorno autoinmune donde la ingesta de gluten daña el intestino delgado.
+ENF009,Hipotiroidismo Primario,0.20,Afección en la que la glándula tiroides no produce suficiente hormona tiroidea.
+ENF010,Cáncer de Colon Hereditario No Polipósico (Síndrome de Lynch),0.80,Síndrome genético que aumenta significativamente el riesgo de cáncer de colon y otros cánceres.

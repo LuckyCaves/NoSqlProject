@@ -22,8 +22,8 @@ def set_schema(client):
     description: string .
 
     treatment_id: string @index(exact) .
-    start_date: datetime @index(datetime) .
-    end_date: datetime @index(datetime) .
+    start_date: datetime .
+    end_date: datetime .
     effectiveness_score: float @index(float) .
 
     medication_id: string @index(exact) .
@@ -70,11 +70,6 @@ def set_schema(client):
       date_of_birth
       gender
       blood_type
-
-      family_relation
-      has_symptom
-      ~attends
-      ~treats
     }
 
     type Doctor {
@@ -83,10 +78,7 @@ def set_schema(client):
       license_number
       years_experience
 
-      recomends
-      specializes
-      part_of
-      attends
+
     }
 
     type Specialty {
@@ -102,10 +94,6 @@ def set_schema(client):
       start_date
       end_date
       effectiveness_score
-
-      cure
-      has_medication
-      require
     }
 
     type Medication {
@@ -115,8 +103,6 @@ def set_schema(client):
       frequency
       route
 
-      interact_with
-      cause
     }
 
     type SideEffect {
@@ -132,7 +118,6 @@ def set_schema(client):
       formation_date
       purpose
 
-      treats
     }
 
     type Disease {
@@ -148,7 +133,6 @@ def set_schema(client):
       description
       severity
 
-      diagnosed
     }
 
     type RehabilitationTime {
@@ -165,7 +149,7 @@ def load_patients(client):
     txn = client.txn()
     try:
         patients = []
-        with open('csvs/nodes/patients.csv', mode='r') as csv_file:
+        with open('csvs/nodes/patients_Dgraph.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 patients.append({
@@ -182,16 +166,15 @@ def load_patients(client):
         txn.commit()
     finally:
         txn.discard()
-    return assigned.uids
-
+        return assigned.uids
 
 def load_doctors(client):
     txn = client.txn()
     try:
         doctors = []
-        with open('csvs/nodes/doctors.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+        with open('csvs/nodes/doctors_Dgraph.csv', mode='r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 doctors.append({
                     'uid': f'_:{row["doctor_id"]}',
                     'dgraph.type': 'Doctor',
@@ -201,20 +184,19 @@ def load_doctors(client):
                     'years_experience': int(row['years_experience'])
                 })
         assigned = txn.mutate(set_obj=doctors)
-        print(f"Loaded {len(doctors)} doctors. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(doctors)} doctors.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
-
 
 def load_specialties(client):
     txn = client.txn()
     try:
         specialties = []
-        with open('csvs/nodes/specialties.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+        with open('csvs/nodes/specialty.csv', mode='r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 specialties.append({
                     'uid': f'_:{row["specialty_id"]}',
                     'dgraph.type': 'Specialty',
@@ -223,20 +205,19 @@ def load_specialties(client):
                     'description': row['description']
                 })
         assigned = txn.mutate(set_obj=specialties)
-        print(f"Loaded {len(specialties)} specialties. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(specialties)} specialties.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
-
 
 def load_treatments(client):
     txn = client.txn()
     try:
         treatments = []
         with open('csvs/nodes/treatments.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 treatments.append({
                     'uid': f'_:{row["treatment_id"]}',
                     'dgraph.type': 'Treatment',
@@ -248,20 +229,19 @@ def load_treatments(client):
                     'effectiveness_score': float(row['effectiveness_score'])
                 })
         assigned = txn.mutate(set_obj=treatments)
-        print(f"Loaded {len(treatments)} treatments. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(treatments)} treatments.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
-
 
 def load_medications(client):
     txn = client.txn()
     try:
         medications = []
-        with open('csvs/nodes/medications.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+        with open('csvs/nodes/medication.csv', mode='r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 medications.append({
                     'uid': f'_:{row["medication_id"]}',
                     'dgraph.type': 'Medication',
@@ -272,22 +252,19 @@ def load_medications(client):
                     'route': row['route']
                 })
         assigned = txn.mutate(set_obj=medications)
-        print(f"Loaded {len(medications)} medications. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(medications)} medications.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
-
-
-
 
 def load_side_effects(client):
     txn = client.txn()
     try:
         effects = []
-        with open('csvs/nodes/side_effects.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+        with open('csvs/nodes/sideEffect.csv', mode='r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 effects.append({
                     'uid': f'_:{row["effect_id"]}',
                     'dgraph.type': 'SideEffect',
@@ -297,44 +274,41 @@ def load_side_effects(client):
                     'severity': row['severity']
                 })
         assigned = txn.mutate(set_obj=effects)
-        print(f"Loaded {len(effects)} side effects. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(effects)} side effects.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
-
 
 def load_treatment_teams(client):
     txn = client.txn()
     try:
         teams = []
-        with open('csvs/nodes/treatment_teams.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+        with open('csvs/nodes/treatmentTeam.csv', mode='r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 teams.append({
                     'uid': f'_:{row["team_id"]}',
                     'dgraph.type': 'TreatmentTeam',
                     'team_id': row['team_id'],
                     'name': row['name'],
                     'formation_date': row['formation_date'],
-                    'lead_doctor_id': row['lead_doctor_id'],
                     'purpose': row['purpose']
                 })
         assigned = txn.mutate(set_obj=teams)
-        print(f"Loaded {len(teams)} treatment teams. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(teams)} treatment teams.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
-
 
 def load_diseases(client):
     txn = client.txn()
     try:
         diseases = []
         with open('csvs/nodes/diseases.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 diseases.append({
                     'uid': f'_:{row["disease_id"]}',
                     'dgraph.type': 'Disease',
@@ -344,69 +318,70 @@ def load_diseases(client):
                     'description': row['description']
                 })
         assigned = txn.mutate(set_obj=diseases)
-        print(f"Loaded {len(diseases)} diseases. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(diseases)} diseases.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
 
 def load_symptoms(client):
     txn = client.txn()
     try:
         symptoms = []
         with open('csvs/nodes/symptoms.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 symptoms.append({
                     'uid': f'_:{row["symptom_id"]}',
                     'dgraph.type': 'Symptom',
                     'symptom_id': row['symptom_id'],
                     'name': row['name'],
                     'description': row['description'],
-                    'severity': row['severity'],
-                    'diagnosed': {'uid': f'_:{row["diagnosed"]}'}
+                    'severity': row['severity']
                 })
         assigned = txn.mutate(set_obj=symptoms)
-        print(f"Loaded {len(symptoms)} symptoms. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(symptoms)} symptoms.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
 
 def load_rehabilitations(client):
     txn = client.txn()
     try:
         rehabilitations = []
-        with open('csvs/nodes/rehabilitations.csv', mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
+        with open('csvs/nodes/rehabilitationTime.csv', mode='r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
                 rehabilitations.append({
                     'uid': f'_:{row["rehabilitation_id"]}',
                     'dgraph.type': 'RehabilitationTime',
                     'rehabilitation_id': row['rehabilitation_id'],
                     'rehabilitation_duration': int(row['rehabilitation_duration']),
-                    'condition_severity': row['condition_severity'],
-                    'completion_status': row['completion_status']
+                    'condition_severity': row['condition_severity']
                 })
         assigned = txn.mutate(set_obj=rehabilitations)
-        print(f"Loaded {len(rehabilitations)} rehabilitations. UIDs: {assigned.uids}")
         txn.commit()
+        print(f"Loaded {len(rehabilitations)} rehabilitations.")
+        return assigned.uids
     finally:
         txn.discard()
-    return assigned.uids
 
 
 #load relations 
+
 def load_family_relation(client, patient_uids):
     txn = client.txn()
     try:
         with open('csvs/relations/family_relation.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': patient_uids[row['uid']],
-                    'family_relation': [{'uid': patient_uids[row['uid2']]}]
-                })
+                uid1 = patient_uids.get(row['uid'])
+                uid2 = patient_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in family_relation row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'family_relation': [{'uid': uid2}]})
         txn.commit()
         print("Loaded family_relation relationships.")
     finally:
@@ -419,10 +394,12 @@ def load_has_symptom(client, patient_uids, symptom_uids):
         with open('csvs/relations/has_symptom.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': patient_uids[row['uid']],
-                    'has_symptom': [{'uid': symptom_uids[row['uid2']]}]
-                })
+                uid1 = patient_uids.get(row['uid'])
+                uid2 = symptom_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in has_symptom row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'has_symptom': [{'uid': uid2}]})
         txn.commit()
         print("Loaded has_symptom relationships.")
     finally:
@@ -432,29 +409,33 @@ def load_has_symptom(client, patient_uids, symptom_uids):
 def load_attends(client, patient_uids, doctor_uids):
     txn = client.txn()
     try:
-        with open('csvs/attends.csv', mode='r') as csv_file:
+        with open('csvs/relations/attends.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': doctor_uids[row['uid2']],
-                    'attends': [{'uid': patient_uids[row['uid']]}]
-                })
+                uid1 = doctor_uids.get(row['uid'])
+                uid2 = patient_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in attends row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'attends': [{'uid': uid2}]})
         txn.commit()
         print("Loaded attends relationships.")
     finally:
         txn.discard()
 
 
-def load_recomends(client, doctor_uids, doctor_uids_2):
+def load_recomends(client, doctor_uids):
     txn = client.txn()
     try:
-        with open('csvs/recomends.csv', mode='r') as csv_file:
+        with open('csvs/relations/recomends.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': doctor_uids[row['uid']],
-                    'recomends': [{'uid': doctor_uids_2[row['uid2']]}]
-                })
+                uid1 = doctor_uids.get(row['uid'])
+                uid2 = doctor_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in recomends row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'recomends': [{'uid': uid2}]})
         txn.commit()
         print("Loaded recomends relationships.")
     finally:
@@ -464,13 +445,15 @@ def load_recomends(client, doctor_uids, doctor_uids_2):
 def load_specializes(client, doctor_uids, specialty_uids):
     txn = client.txn()
     try:
-        with open('csvs/specializes.csv', mode='r') as csv_file:
+        with open('csvs/relations/specializes.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': doctor_uids[row['uid']],
-                    'specializes': [{'uid': specialty_uids[row['uid2']]}]
-                })
+                uid1 = doctor_uids.get(row['uid'])
+                uid2 = specialty_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in specializes row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'specializes': [{'uid': uid2}]})
         txn.commit()
         print("Loaded specializes relationships.")
     finally:
@@ -480,13 +463,15 @@ def load_specializes(client, doctor_uids, specialty_uids):
 def load_part_of(client, doctor_uids, team_uids):
     txn = client.txn()
     try:
-        with open('csvs/part_of.csv', mode='r') as csv_file:
+        with open('csvs/relations/part_of.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': doctor_uids[row['uid']],
-                    'part_of': [{'uid': team_uids[row['uid2']]}]
-                })
+                uid1 = doctor_uids.get(row['uid'])
+                uid2 = team_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in part_of row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'part_of': [{'uid': uid2}]})
         txn.commit()
         print("Loaded part_of relationships.")
     finally:
@@ -496,13 +481,15 @@ def load_part_of(client, doctor_uids, team_uids):
 def load_treats(client, team_uids, patient_uids):
     txn = client.txn()
     try:
-        with open('csvs/treats.csv', mode='r') as csv_file:
+        with open('csvs/relations/treats.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': team_uids[row['uid']],
-                    'treats': [{'uid': patient_uids[row['uid2']]}]
-                })
+                uid1 = team_uids.get(row['uid'])
+                uid2 = patient_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in treats row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'treats': [{'uid': uid2}]})
         txn.commit()
         print("Loaded treats relationships.")
     finally:
@@ -512,13 +499,15 @@ def load_treats(client, team_uids, patient_uids):
 def load_cure(client, treatment_uids, disease_uids):
     txn = client.txn()
     try:
-        with open('csvs/cure.csv', mode='r') as csv_file:
+        with open('csvs/relations/cure.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': treatment_uids[row['uid']],
-                    'cure': [{'uid': disease_uids[row['uid2']]}]
-                })
+                uid1 = treatment_uids.get(row['uid'])
+                uid2 = disease_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in cure row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'cure': [{'uid': uid2}]})
         txn.commit()
         print("Loaded cure relationships.")
     finally:
@@ -528,13 +517,15 @@ def load_cure(client, treatment_uids, disease_uids):
 def load_has_medication(client, treatment_uids, medication_uids):
     txn = client.txn()
     try:
-        with open('csvs/has_medication.csv', mode='r') as csv_file:
+        with open('csvs/relations/has_medication.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': treatment_uids[row['uid']],
-                    'has_medication': [{'uid': medication_uids[row['uid2']]}]
-                })
+                uid1 = treatment_uids.get(row['uid'])
+                uid2 = medication_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in has_medication row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'has_medication': [{'uid': uid2}]})
         txn.commit()
         print("Loaded has_medication relationships.")
     finally:
@@ -544,13 +535,15 @@ def load_has_medication(client, treatment_uids, medication_uids):
 def load_require(client, treatment_uids, rehabilitation_uids):
     txn = client.txn()
     try:
-        with open('csvs/requires.csv', mode='r') as csv_file:
+        with open('csvs/relations/require.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': treatment_uids[row['uid']],
-                    'require': [{'uid': rehabilitation_uids[row['uid2']]}]
-                })
+                uid1 = treatment_uids.get(row['uid'])
+                uid2 = rehabilitation_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in requires row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'require': [{'uid': uid2}]})
         txn.commit()
         print("Loaded require relationships.")
     finally:
@@ -560,13 +553,15 @@ def load_require(client, treatment_uids, rehabilitation_uids):
 def load_cause(client, medication_uids, effect_uids):
     txn = client.txn()
     try:
-        with open('csvs/causes.csv', mode='r') as csv_file:
+        with open('csvs/relations/cause.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': medication_uids[row['uid']],
-                    'cause': [{'uid': effect_uids[row['uid2']]}]
-                })
+                uid1 = medication_uids.get(row['uid'])
+                uid2 = effect_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in causes row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'cause': [{'uid': uid2}]})
         txn.commit()
         print("Loaded cause relationships.")
     finally:
@@ -576,13 +571,15 @@ def load_cause(client, medication_uids, effect_uids):
 def load_interacts_with(client, medication_uids):
     txn = client.txn()
     try:
-        with open('csvs/interacts_with.csv', mode='r') as csv_file:
+        with open('csvs/relations/interacts_with.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': medication_uids[row['uid']],
-                    'interact_with': [{'uid': medication_uids[row['uid2']]}]
-                })
+                uid1 = medication_uids.get(row['uid'])
+                uid2 = medication_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in interacts_with row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'interact_with': [{'uid': uid2}]})
         txn.commit()
         print("Loaded interact_with relationships.")
     finally:
@@ -592,45 +589,52 @@ def load_interacts_with(client, medication_uids):
 def load_diagnosed(client, symptom_uids, disease_uids):
     txn = client.txn()
     try:
-        with open('csvs/diagnosed.csv', mode='r') as csv_file:
+        with open('csvs/relations/diagnosed.csv', mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                txn.mutate(set_obj={
-                    'uid': symptom_uids[row['uid']],
-                    'diagnosed': {'uid': disease_uids[row['uid2']]}
-                })
+                uid1 = symptom_uids.get(row['uid'])
+                uid2 = disease_uids.get(row['uid2'])
+                if not uid1 or not uid2:
+                    print(f"Warning: Missing UID(s) in diagnosed row: {row}")
+                    continue
+                txn.mutate(set_obj={'uid': uid1, 'diagnosed': [{'uid': uid2}]})
         txn.commit()
         print("Loaded diagnosed relationships.")
     finally:
         txn.discard()
 
 
+
 def load_data(client):
-    patients_uids = load_patients(client)
-    doctors_uids = load_doctors(client)
-    specialties_uids = load_specialties(client)
-    treatments_uids = load_treatments(client)
-    medications_uids = load_medications(client)
+    # Load nodes
+    patient_uids = load_patients(client)
+    doctor_uids = load_doctors(client)
+    specialty_uids = load_specialties(client)
+    treatment_uids = load_treatments(client)
+    medication_uids = load_medications(client)
     side_effects_uids = load_side_effects(client)
     treatment_teams_uids = load_treatment_teams(client)
     diseases_uids = load_diseases(client)
     symptoms_uids = load_symptoms(client)
-    rehabilitations_uids = load_rehabilitations(client)
+    rehabilitation_uids = load_rehabilitations(client)
 
-
-    load_buys(client, cosmetic_uids, player_uids)
-    load_uses(client, cosmetic_uids, player_uids)
-    load_plays(client, player_uids, level_uids)
-    load_has(client, level_uids, mission_uids)
-    load_rewards(client, mission_uids, cosmetic_uids)
-    load_friends_with(client, player_uids)
-
-def create_data(client):
-    print("La función create_data original ha sido reemplazada por load_data.")
-    load_data(client)
-
-
-
+    # Load relations
+    load_family_relation(client, patient_uids)
+    load_has_symptom(client, patient_uids, symptoms_uids)
+    load_attends(client, patient_uids, doctor_uids)
+    load_recomends(client, doctor_uids)
+    load_specializes(client, doctor_uids, specialty_uids)
+    load_part_of(client, doctor_uids, treatment_teams_uids)
+    load_treats(client, treatment_teams_uids, patient_uids)
+    load_cure(client, treatment_uids, diseases_uids)
+    load_has_medication(client, treatment_uids, medication_uids)
+    load_require(client, treatment_uids, rehabilitation_uids)
+    load_cause(client, medication_uids, side_effects_uids)
+    load_interacts_with(client, medication_uids)
+    load_diagnosed(client, symptoms_uids, diseases_uids)
+    print("Data loaded successfully.")
+    
+#querys
 def get_doctors_for_patient(client, patient_id_value):
     query = """
     query getDoctors($patient_id: string) {

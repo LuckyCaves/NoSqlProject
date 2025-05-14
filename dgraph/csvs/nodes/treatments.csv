@@ -1,0 +1,11 @@
+treatment_id,name,description,start_date,end_date,effectiveness_score
+T0001,Physical Therapy for Knee Injury,A structured exercise program to restore function and reduce pain in the knee following an ACL tear.,2023-01-15T09:00:00Z,2023-07-15T17:00:00Z,0.75
+T0002,Chemotherapy Cycle 1 - Breast Cancer Stage II,Initial round of intravenous cytotoxic drugs to target and destroy rapidly dividing cancer cells.,2023-03-01T10:30:00Z,2023-03-22T15:00:00Z,0.60
+T0003,Cognitive Behavioral Therapy for Insomnia,Psychotherapy sessions focused on identifying and changing thought patterns and behaviors that interfere with sleep.,2023-05-10T14:00:00Z,2023-08-10T14:00:00Z,0.85
+T0004,Insulin Lispro Administration - Pre-meal,Rapid-acting insulin injection to manage blood glucose spikes after meals for Type 1 Diabetes.,2022-11-01T08:00:00Z,2027-11-01T08:00:00Z,0.90
+T0005,Cataract Surgery - Right Eye,Surgical removal of the clouded natural lens and replacement with an intraocular lens to improve vision.,2024-02-20T11:00:00Z,2024-02-20T12:30:00Z,0.98
+T0006,Antibiotic Course - Pneumonia,10-day course of Levofloxacin to treat community-acquired bacterial pneumonia.,2023-09-05T18:00:00Z,2023-09-15T18:00:00Z,0.92
+T0007,Allergen Immunotherapy - Pollen Allergy,Series of injections with increasing doses of pollen extract to desensitize the immune system.,2022-06-01T16:00:00Z,2025-06-01T16:00:00Z,0.70
+T0008,Radiation Therapy - Prostate Cancer,External beam radiation therapy delivered over several weeks to target and eliminate cancerous cells in the prostate gland.,2024-01-08T13:00:00Z,2024-02-19T13:45:00Z,0.80
+T0009,Anticoagulation Therapy - Warfarin,Oral medication to prevent blood clots in a patient with atrial fibrillation requiring regular INR monitoring.,2023-04-12T08:30:00Z,2026-04-12T08:30:00Z,0.88
+T0010,Topical Corticosteroid for Eczema Flare-up,Application of a medium-potency steroid cream to reduce inflammation and itching associated with an acute eczema flare.,2024-04-28T10:00:00Z,2024-05-12T10:00:00Z,0.78

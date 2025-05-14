@@ -1,0 +1,11 @@
+symptom_id,name,description,severity
+SNT001,Fiebre,Elevación de la temperatura corporal por encima de 38°C.,Moderado
+SNT002,Tos productiva,Tos que expulsa mucosidad o flema de los pulmones.,Leve
+SNT003,Dolor de garganta agudo,Dolor intenso al tragar, a menudo acompañado de inflamación visible.,Moderado
+SNT004,Fatiga extrema,Sensación persistente y limitante de agotamiento físico y mental.,Grave
+SNT005,Dolor articular,Molestia, dolor o inflamación que surge de cualquier parte de una articulación.,Moderado
+SNT006,Cefalea tensional,Dolor de cabeza descrito como una presión o apretamiento constante alrededor de la cabeza.,Leve
+SNT007,Dificultad respiratoria leve,Sensación de falta de aire con esfuerzo físico moderado.,Leve
+SNT008,Pérdida súbita del olfato,Incapacidad repentina para detectar olores comunes.,Moderado
+SNT009,Erupción cutánea con picor,Aparición de lesiones en la piel que causan comezón intensa.,Moderado
+SNT010,Confusión o desorientación,Incapacidad para pensar con claridad o reconocer personas, lugares o la fecha.,Grave
