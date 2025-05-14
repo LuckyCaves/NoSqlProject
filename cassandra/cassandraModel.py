@@ -455,15 +455,6 @@ def bulk_insert(session):
     actions=100
     alerts=100
 
-    # Generate patients
-    # data = []
-    # for patient in patientsData:
-    #     patient_uuid = patient["id"]
-    #     patients.append(patient_uuid)
-    #     dob = random_date(datetime(1950, 1, 1), datetime(2008, 1, 1))
-    #     data.append((patient_uuid, patient["first_name"], patient["last_name"], dob))
-    # execute_batch(session, pat_stmt, data)
-
     # Load patients from CSV
     with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\patients.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
@@ -486,14 +477,6 @@ def bulk_insert(session):
             data.append((patient_uuid, row['first_name'], row['last_name'], specialty))
     execute_batch(session, doc_stmt, data)
 
-    # Generate doctors
-    # data = []
-    # for index, doctor in enumerate(doctorsData):
-    #     doctor_uuid = doctor["id"]
-    #     doctors.append(doctor_uuid)
-    #     data.append((doctor_uuid, doctor["first_name"], doctor["last_name"], specialists[index]))
-    # execute_batch(session, doc_stmt, data)
-
     # Load appointments from CSV
     with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\appointments.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
@@ -509,20 +492,6 @@ def bulk_insert(session):
     execute_batch(session, appbpt_stmt, data)
     execute_batch(session, appbdt_stmt, data)
     execute_batch(session, appbpd_stmt, data)
-    
-    # data = []
-    # for i in range(appointments):
-    #     app_date = random_date(datetime(2025, 1, 1), datetime(2025, 12, 31))
-    #     app_id = random_dateUUID(app_date)
-    #     patient = random.choice(patients)
-    #     doctor = random.choice(doctors)
-
-    #     status = random.choice(['scheduled', 'completed', 'cancelled'])
-    #     notes = random.choice(['', 'Patient needs to fast before the appointment', 'Patient needs to bring a urine sample'])
-    #     data.append((app_id, app_date, patient, doctor, status, notes))
-    # execute_batch(session, appbpt_stmt, data)
-    # execute_batch(session, appbdt_stmt, data)
-    # execute_batch(session, appbpd_stmt, data)
 
     # Generate accounts from accounts CSV
     with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\accounts.csv", mode='r') as file:
@@ -537,26 +506,6 @@ def bulk_insert(session):
             registration_date = UUID(row['registration_date'])
             data.append((account_id, row['username'], row['first_name'], row['last_name'], registration_date, row['role']))
     execute_batch(session, acc_stmt, data)
-
-    #Generate accounts patients
-    # data = []
-    # for index, patient in enumerate(patients):
-    #     account_id = patients[index]
-    #     patientsAcc.append(account_id)
-    #     registration_date = random_date(datetime(2024, 1, 1), datetime(2025, 1, 1))
-    #     registration_date = random_dateUUID(registration_date)
-    #     data.append((account_id, patientsData[index]["username"], patientsData[index]["first_name"], patientsData[index]["last_name"], registration_date, 'patient'))
-    # execute_batch(session, acc_stmt, data)
-    
-    # # Generate accounts doctors
-    # data = []
-    # for index, doctor in enumerate(doctors):
-    #     account_id = doctors[index]
-    #     doctorsAcc.append(account_id)
-    #     registration_date = random_date(datetime(2024, 1, 1), datetime(2025, 1, 1))
-    #     registration_date = random_dateUUID(registration_date)
-    #     data.append((account_id, doctorsData[index]["username"], doctorsData[index]["first_name"], doctorsData[index]["last_name"], registration_date, 'doctor'))
-    # execute_batch(session, acc_stmt, data)
 
     # Load vital signs from CSV
     with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\vital_signs.csv", mode='r') as file:
@@ -573,27 +522,6 @@ def bulk_insert(session):
             data.append((vital_sign_id, account_id, vital_sign_type, vital_sign_value, vital_sign_date))
     execute_batch(session, vs_stmt, data)
     execute_batch(session, vsad_stmt, data)
-
-    # Generate vital signs
-    # data = []
-    # for i in range(vital_signs):
-    #     account = random.choice(patientsAcc)
-    #     vital_sign_type = random.choice(['blood pressure', 'heart rate', 'steps', 'oxygenation', 'temperature'])
-    #     if vital_sign_type == 'blood pressure':
-    #         vital_sign_value = random.uniform(60, 200)
-    #     elif vital_sign_type == 'heart rate':
-    #         vital_sign_value = random.uniform(30, 250)
-    #     elif vital_sign_type == 'steps':
-    #         vital_sign_value = random.uniform(0, 20000)
-    #     elif vital_sign_type == 'oxygenation':
-    #         vital_sign_value = random.uniform(75, 100)
-    #     elif vital_sign_type == 'temperature':
-    #         vital_sign_value = random.uniform(35, 39)
-    #     vital_sign_date = random_date(datetime(2020, 1, 1), datetime(2025, 1, 1))
-    #     vital_sign_id = random_dateUUID(vital_sign_date)
-    #     data.append((vital_sign_id, account, vital_sign_type, vital_sign_value, vital_sign_date))
-    # execute_batch(session, vs_stmt, data)
-    # execute_batch(session, vsad_stmt, data)
 
     # Generate alerts
     data = []
