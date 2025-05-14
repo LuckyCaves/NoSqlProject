@@ -82,7 +82,7 @@ def create_doctors():
                 print(f"Error procesando doctor {doctor.get('full_name', 'UNKNOWN')}: {e}")              
 
 def create_templates():
-    with open("templates.csv", encoding="utf-8") as fd:
+    with open("../data/templates.csv", encoding="utf-8") as fd:
         templates_csv = csv.DictReader(fd)
         for template in templates_csv:
             try:
