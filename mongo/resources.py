@@ -335,45 +335,30 @@ class LabResultResource:
     def __init__(self, db):
         self.db = db
 
-    async def on_get(self, req, resp, patient_id):
-        """Get all lab results for a patient"""
-        lab_results = self.db.patients.find_one(
-            {"patient_id": patient_id},
-            {"lab_results": 1}
-        )
-        if lab_results and 'lab_results' in lab_results:
-            resp.media = lab_results['lab_results']
-            resp.status = falcon.HTTP_200
-        else:
-            resp.status = falcon.HTTP_404
-
     async def on_post(self, req, resp, patient_id):
         """Add lab results for a patient"""
         data = await req.media
         try:
-            # Validate lab result structure
-            if not isinstance(data, list):
-                data = [data]
+            # Validar estructura básica
+            if not all(key in data for key in ["test_name", "date", "values", "notes"]):
+                raise falcon.HTTPBadRequest("Missing required fields")
             
-            for result in data:
-                validate_data(result, {
-                    "test_name": str,
-                    "date": str,
-                    "values": (str, float, int),
-                    "notes": str
-                })
+            # Convertir la fecha si es necesario
+            try:
+                data['date'] = datetime.fromisoformat(data['date'])
+            except ValueError:
+                pass  # Mantener como string si no se puede convertir
             
-            update_result = self.db.patients.update_one(
+            # Actualizar el paciente
+            result = self.db.patients.update_one(
                 {"patient_id": patient_id},
-                {"$push": {"lab_results": {"$each": data}}}
+                {"$push": {"lab_results": data}}
             )
             
-            if update_result.modified_count > 0:
+            if result.modified_count > 0:
                 resp.status = falcon.HTTP_201
             else:
-                resp.status = falcon.HTTP_404
-        except falcon.HTTPBadRequest as e:
-            raise e
+                raise falcon.HTTPNotFound(description="Patient not found")
         except Exception as e:
             raise falcon.HTTPInternalServerError(description=str(e))
 

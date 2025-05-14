@@ -287,7 +287,7 @@ def main():
     model.create_schema(session)
 
     # Insert data
-    # model.bulk_insert(session)
+    model.bulk_insert(session)
 
     while True:
         os.system("cls")

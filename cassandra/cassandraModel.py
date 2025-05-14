@@ -456,7 +456,7 @@ def bulk_insert(session):
     alerts=100
 
     # Load patients from CSV
-    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\patients.csv", mode='r') as file:
+    with open(".\\data\\patients.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
         data = []
         for row in csv_reader:
@@ -467,7 +467,7 @@ def bulk_insert(session):
     execute_batch(session, pat_stmt, data)
 
     # Load doctors from CSV
-    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\doctors.csv", mode='r') as file:
+    with open(".\\data\\doctors.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
         data = []
         for row in csv_reader:
@@ -478,7 +478,7 @@ def bulk_insert(session):
     execute_batch(session, doc_stmt, data)
 
     # Load appointments from CSV
-    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\appointments.csv", mode='r') as file:
+    with open(".\\data\\appointments.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
         data = []
         for row in csv_reader:
@@ -494,7 +494,7 @@ def bulk_insert(session):
     execute_batch(session, appbpd_stmt, data)
 
     # Generate accounts from accounts CSV
-    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\accounts.csv", mode='r') as file:
+    with open(".\\data\\accounts.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
         data = []
         for row in csv_reader:
@@ -508,7 +508,7 @@ def bulk_insert(session):
     execute_batch(session, acc_stmt, data)
 
     # Load vital signs from CSV
-    with open("C:\\Users\\quiro\\OneDrive - ITESO\\Materias\\6to Semestre\\BasesDatosNoRelacionales\\NoSqlProject\\data\\vital_signs.csv", mode='r') as file:
+    with open(".\\data\\vital_signs.csv", mode='r') as file:
         csv_reader = csv.DictReader(file)
         data = []
         for row in csv_reader:
