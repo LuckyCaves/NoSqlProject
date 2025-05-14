@@ -1,0 +1,11 @@
+doctor_id,first_name,last_name,specialty
+D0008,Mia,Taylor,Psychiatrist
+D0006,Isabella,Gonzalez,Oncologist
+D0004,Amelia,Rodriguez,Orthopedic Surgeon
+D0007,Mason,Perez,Ophthalmologist
+D0009,Lucas,Clark,Endocrinologist
+D0010,Harper,Walker,Gastroenterologist
+D0005,Ethan,Lopez,Pediatrician
+D0002,Sophia,Miller,Dermatologist
+D0003,Noah,Garcia,Neurologist
+D0001,Liam,Davis,Cardiologist

@@ -567,7 +567,7 @@ def insert_patient(session, patientData):
 def insert_doctor(session, doctorData):
     stmt = session.prepare(INSERT_DOCTOR)
     insertDoctorData = [doctorData[0], doctorData[1], doctorData[2], doctorData[3]]
-    session.execute(stmt, [insertDoctorData])
+    session.execute(stmt, insertDoctorData)
     create_account(session, doctorData)
 
 def insert_appointment(session, appointmentData):
@@ -729,9 +729,7 @@ def get_vital_signs(session, account_id, start_date=None, end_date=None, vital_s
 def insert_alert(session, alertData):
 
     stmt = session.prepare(INSERT_ALERT_BY_ACCOUNT_DATE)
-    session.execute(stmt, (alertData["alert_id"], alertData["account_id"], 
-                           alertData["date"], alertData["alert_type"], 
-                           alertData["alert_message"]))
+    session.execute(stmt, alertData)
 
 def get_alerts(session, account_id):
     date = datetime.now() - dt.timedelta(days=760)

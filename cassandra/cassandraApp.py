@@ -67,7 +67,9 @@ def printMenuDoctor():
         2: "Update appointment",
         3: "Create appointment",
         4: "View vital signs",
-        5: "Delete vital signs"
+        5: "Delete vital signs",
+        6: "Create a new doctor",
+        10: "Exit"
     }
     for key in mm_options.keys():
         print(key, '--', mm_options[key])
@@ -76,7 +78,8 @@ def printMenuPatient():
     mm_options = {
         0: "View appointments",
         1: "View vital signs",
-        2: "View alerts"
+        2: "View alerts",
+        10: "Exit"
     }
     for key in mm_options.keys():
         print(key, '--', mm_options[key])
@@ -93,7 +96,18 @@ def createAppointment(session):
     appointmentData[0] = model.random_dateUUID(date)
     appointmentData[4] = "Scheduled"
 
+    alertDate = datetime.strptime(strDate, '%Y-%m-%d %H:%M:%S')
+    alertData = ['']*5
+    alertData[0] = appointmentData[0]
+    alertData[1] = appointmentData[2]
+    alertData[2] = appointmentData[1].date()
+    alertData[3] = "Appointment"
+    alertData[4] = f"You have an appointment scheduled with doctor {appointmentData[3]}"
+
     model.insert_appointment(session, appointmentData)
+    model.insert_alert(session, alertData)
+
+    print("**** Appointment created ****")
 
 def updateAppointment(session, doctorId):
     appointmentData = ['']*5
@@ -120,6 +134,8 @@ def newPatient(session):
 
     model.insert_patient(session, patientData)
 
+    print("**** Patient created ****")
+
 def newDoctor(session):
     doctorData = ['']*7
     doctorData[0] = input("Enter doctor ID: ")
@@ -131,6 +147,8 @@ def newDoctor(session):
     doctorData[6] = "doctor"
 
     model.insert_doctor(session, doctorData)
+
+    print("**** Doctor created ****")
 
 def appDoctor(session, accountData):
     while True:
@@ -189,6 +207,15 @@ def appDoctor(session, accountData):
             patientId = input("Enter patient ID: ")
             model.delete_vital_signs(session, patientId, dateRange[0], dateRange[1])
             pass
+        elif option == 6:
+            # Create a new doctor
+            print("**** Create a new doctor ****")
+            newDoctor(session)
+            pass
+        elif option == 10:
+            # Exit
+            print("**** Exiting ****")
+            break
         else:
             print("Invalid option. Please try again.")
 
@@ -233,7 +260,10 @@ def appPatient(session, accountData):
             print("**** View alerts ****")
             model.get_alerts(session, accountData['account_id'])
             pass
-
+        elif option == 10:
+            # Exit
+            print("**** Exiting ****")
+            break
         else:
             print("Invalid option. Please try again.")
 
@@ -248,18 +278,19 @@ def main():
     model.create_schema(session)
 
     # Insert data
-    model.bulk_insert(session)
+    # model.bulk_insert(session)
 
-    accountData = print_log(session)
+    while True:
+        os.system("cls")
+        accountData = print_log(session)
+        if not accountData:
+            print("**** No account found. Exiting...")
+            return
 
-    if not accountData:
-        print("**** No account found. Exiting...")
-        return
-
-    if accountData['role'] == 'doctor':
-        appDoctor(session, accountData)
-    if accountData['role'] == 'patient':
-        appPatient(session, accountData)
+        if accountData['role'] == 'doctor':
+            appDoctor(session, accountData)
+        if accountData['role'] == 'patient':
+            appPatient(session, accountData)
 
     # while True:
 
