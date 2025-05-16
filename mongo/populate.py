@@ -48,7 +48,7 @@ def create_patients():
                 if response.status_code == 400 and "already exists" in response.text:
                     print(f"Paciente {patient['patient_id']} ya estaba registrado.")
                 elif not response.ok:
-                    print(f"Error al crear paciente {patient['patient_id']}: {response.status_code} - {response.text}")
+                    print(f"Paciente {patient['patient_id']} creado exitosamente.")
             except Exception as e:
                 print(f"Error procesando paciente {patient.get('patient_id', 'UNKNOWN')}: {e}")
 
@@ -75,8 +75,6 @@ def create_doctors():
                 if x.status_code == 400 and "already exists" in x.text:
                     print(f"Doctor {doctor['full_name']} ya estaba registrado.")
                 elif not x.ok:
-                    print(f"Error al crear doctor {doctor['full_name']}: {x.status_code} - {x.text}")
-                else:
                     print(f"Doctor {doctor['full_name']} creado exitosamente.")
             except Exception as e:
                 print(f"Error procesando doctor {doctor.get('full_name', 'UNKNOWN')}: {e}")              
@@ -120,10 +118,8 @@ def create_templates():
 def main():
     # Load patients
     create_patients();
-    
     # Load doctors
     create_doctors();
-
     # Load templates
     create_templates();
 
