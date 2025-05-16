@@ -7,6 +7,7 @@ from pprint import pprint
 import json
 from tabulate import tabulate
 from datetime import datetime
+from pymongo import MongoClient
 
 # Set logger
 log = logging.getLogger()
@@ -17,6 +18,9 @@ log.addHandler(handler)
 
 # Read env vars to API connection
 MEDICAL_RECORDS_API = os.getenv('MEDICAL_RECORDS_API', "http://localhost:8000")
+
+client = MongoClient('mongodb://localhost:27017/')
+db = client.medical_records
 
 # ========== SEARCH FUNCTIONS ==========
 def search_patient_by_id():
@@ -514,108 +518,224 @@ def delete_doctor():
 def search_last_consultation_doctor():
     patient_id = input("Enter patient ID: ")
     log.info(f"Searching last consultation doctor for patient ID: {patient_id}")
+    
+    pipeline = [
+        {
+            "$match": {
+                "patient_id": patient_id
+            }
+        },
+        {
+            "$unwind": "$consultations"
+        },
+        {
+            "$sort": {
+                "consultations.date": -1
+            }
+        },
+        {
+            "$limit": 1
+        },
+        {
+            "$lookup": {
+                "from": "doctors",
+                "localField": "consultations.doctor_id",
+                "foreignField": "doctor_id",
+                "as": "doctor_info"
+            }
+        },
+        {
+            "$unwind": "$doctor_info"
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "doctor_name": "$doctor_info.full_name",
+                "phone": "$doctor_info.phone_number",
+                "license": "$doctor_info.license_number"
+            }
+        }
+    ]
+    
     try:
-        # Obtener los datos del paciente (incluye historial de consultas)
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-
-        consultations = patient.get("consultations", [])
-        if not consultations:
+        result = list(db.patients.aggregate(pipeline))
+        if not result:
             print(f"No consultations found for patient ID {patient_id}")
             return
-
-        # Suponiendo que las consultas tienen un campo "date" en formato ISO o similar
-        last_consultation = sorted(consultations, key=lambda x: x.get("date", ""), reverse=True)[0]
-        doctor_id = last_consultation.get("doctor_id")
-
-        if not doctor_id:
-            print("Last consultation does not have a doctor associated.")
-            return
-
-        # Buscar información del doctor
-        doctor_response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
-        doctor_response.raise_for_status()
-        doctor = doctor_response.json()
-
-        # Mostrar solo nombre, teléfono y licencia
+            
+        doctor = result[0]
         print("\nDoctor from Last Consultation:")
         print(tabulate(
             [
-                ["Name", ("Dr " + doctor.get("full_name", "N/A"))],
-                ["Phone", doctor.get("phone_number", "N/A")],
-                ["License", doctor.get("license_number", "N/A")]
+                ["Name", ("Dr " + doctor.get("doctor_name", "N/A"))],
+                ["Phone", doctor.get("phone", "N/A")],
+                ["License", doctor.get("license", "N/A")]
             ],
             headers=["Field", "Value"],
             tablefmt="grid"
         ))
-
-    except requests.exceptions.HTTPError as err:
-        if response.status_code == 404:
-            print(f"Patient with ID {patient_id} not found")
-        else:
-            print(f"HTTP error: {err}")
+        
     except Exception as err:
-        print(f"Unexpected error: {err}")
+        print(f"Error: {err}")
 
 def show_templates_filled_by_patient():
     patient_id = input("Enter patient ID: ")
     log.info(f"Searching filled templates for patient ID: {patient_id}")
+    
+    pipeline = [
+        {
+            "$match": {
+                "patient_id": patient_id
+            }
+        },
+        {
+            "$unwind": "$forms_filled"
+        },
+        {
+            "$lookup": {
+                "from": "form_templates",
+                "localField": "forms_filled.template_id",
+                "foreignField": "template_id",
+                "as": "template_info"
+            }
+        },
+        {
+            "$unwind": "$template_info"
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "patient_name": "$full_name",
+                "template_name": "$template_info.template_name",
+                "date_filled": "$forms_filled.date_filled",
+                "cabinet_number": "$forms_filled.storage_reference.cabinet_number",
+                "file_url": "$forms_filled.storage_reference.file_url"
+            }
+        }
+    ]
+    
     try:
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-        if 'forms_filled' in patient and patient['forms_filled']:
-            print("\nFilled Templates:")
-            for form in patient['forms_filled']:
-                print(f"\nTemplate ID: {form['template_id']}")
-                print(f"Date Filled: {form['date_filled']}")
-                print(f"Storage Reference: {form['storage_reference']}")
-        else:
-            print("No filled templates found for this patient")
+        results = list(db.patients.aggregate(pipeline))
+        if not results:
+            print(f"Patient ID {patient_id} has no filled templates")
+            return
+            
+        print(f"\nPatient: {results[0]['patient_name']} (ID: {patient_id})")
+        print("Filled Templates:")
+        
+        for result in results:
+            print(f"\n- Template: {result['template_name']}")
+            print(f"  Date Filled: {result['date_filled']}")
+            print(f"  Storage: Cabinet: {result['cabinet_number']}, URL: {result['file_url']}")
+            
     except Exception as err:
         print(f"Error: {err}")
 
 def show_doctors_who_attended_patient():
     patient_id = input("Enter patient ID: ")
     log.info(f"Searching doctors who attended patient ID: {patient_id}")
+    
+    pipeline = [
+        {
+            "$match": {
+                "patient_id": patient_id
+            }
+        },
+        {
+            "$unwind": "$consultations"
+        },
+        {
+            "$group": {
+                "_id": "$consultations.doctor_id",
+                "consultation_dates": {
+                    "$push": "$consultations.date"
+                }
+            }
+        },
+        {
+            "$lookup": {
+                "from": "doctors",
+                "localField": "_id",
+                "foreignField": "doctor_id",
+                "as": "doctor_info"
+            }
+        },
+        {
+            "$unwind": "$doctor_info"
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "doctor_id": "$doctor_info.doctor_id",
+                "name": "$doctor_info.full_name",
+                "specialty": "$doctor_info.specialty",
+                "consultation_count": {
+                    "$size": "$consultation_dates"
+                }
+            }
+        }
+    ]
+    
     try:
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-        if 'consultations' in patient and patient['consultations']:
-            print("\nDoctors who attended this patient:")
-            for consult in patient['consultations']:
-                doctor_id = consult['doctor_id']
-                doctor_response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
-                doctor_response.raise_for_status()
-                doctor = doctor_response.json()
-                print(f"\nDoctor ID: {doctor['doctor_id']}")
-                print(f"Name: {doctor['full_name']}")
-                print(f"Specialty: {doctor['specialty']}")
-        else:
+        results = list(db.patients.aggregate(pipeline))
+        if not results:
             print("No consultations found for this patient")
+            return
+            
+        print("\nDoctors who attended this patient:")
+        for doctor in results:
+            print(f"\nDoctor ID: {doctor['doctor_id']}")
+            print(f"Name: {doctor['name']}")
+            print(f"Specialty: {doctor['specialty']}")
+            print(f"Number of consultations: {doctor['consultation_count']}")
+            
     except Exception as err:
         print(f"Error: {err}")
 
 def show_patients_prescribed_medication():
     medication = input("Enter medication name: ")
     log.info(f"Searching patients prescribed with medication: {medication}")
+    
+    pipeline = [
+        {
+            "$match": {
+                "prescriptions.medication": medication
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "patient_id": 1,
+                "full_name": 1,
+                "phone": 1,
+                "prescriptions": {
+                    "$filter": {
+                        "input": "$prescriptions",
+                        "as": "prescription",
+                        "cond": {
+                            "$eq": ["$$prescription.medication", medication]
+                        }
+                    }
+                }
+            }
+        }
+    ]
+    
     try:
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients")
-        response.raise_for_status()
-        patients = response.json()
-        found_patients = [p for p in patients if any(med['medication'] == medication for med in p.get('prescriptions', []))]
-        
-        if found_patients:
-            print("\nPatients prescribed with medication:")
-            for patient in found_patients:
-                print(f"\nPatient ID: {patient['patient_id']}")
-                print(f"Name: {patient['full_name']}")
-                print(f"Phone Number: {patient['phone']}")
-                print(f"Prescriptions: {[med['medication'] for med in patient.get('prescriptions', [])]}")
-        else:
+        results = list(db.patients.aggregate(pipeline))
+        if not results:
             print("No patients found with that medication")
+            return
+            
+        print("\nPatients prescribed with medication:")
+        for patient in results:
+            print(f"\nPatient ID: {patient['patient_id']}")
+            print(f"Name: {patient['full_name']}")
+            print(f"Phone Number: {patient['phone']}")
+            print("Prescriptions:")
+            for prescription in patient['prescriptions']:
+                print(f"- {prescription['medication']} ({prescription['dosage']}, {prescription['frequency']})")
+                
     except Exception as err:
         print(f"Error: {err}")
 

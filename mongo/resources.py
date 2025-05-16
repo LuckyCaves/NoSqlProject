@@ -3,6 +3,7 @@ import falcon
 from bson.objectid import ObjectId
 from datetime import datetime
 from pymongo import errors
+from pymongo import ASCENDING, DESCENDING, TEXT
 
 # Helper functions
 def validate_data(data, schema):
@@ -116,6 +117,16 @@ form_template_types = {
 class PatientResource:
     def __init__(self, db):
         self.db = db
+        self.db.patients.create_index("patient_id", unique=True)
+        self.db.patients.create_index([("full_name", TEXT)])
+        self.db.patients.create_index("comorbidities")
+        self.db.patients.create_index([("prescriptions.date_prescribed", DESCENDING)])
+        self.db.patients.create_index("prescriptions.medication")
+        self.db.patients.create_index([("consultations.date", DESCENDING)])
+        self.db.patients.create_index("consultations.doctor_id")
+        self.db.patients.create_index("consultations.template_id")
+        
+
 
     def _convert_datetimes(self, data):
         """Helper method to convert datetime objects to ISO format strings"""
@@ -223,6 +234,9 @@ class PatientsResource:
 class DoctorResource:
     def __init__(self, db):
         self.db = db
+        self.db.doctors.create_index("doctor_id", unique=True)
+        self.db.doctors.create_index("license_number")
+        db.doctors.create_index([("full_name", TEXT)])  
 
     def _convert_datetimes(self, data):
         """Helper method to convert datetime objects to ISO format strings"""
@@ -478,6 +492,8 @@ class AllergyResource:
 class FormTemplateResource:
     def __init__(self, db):
         self.db = db
+        self.db.form_templates.create_index("template_id", unique = True)
+        self.db.form_templates.create_index([("template_name", TEXT)])
 
     def _convert_datetimes(self, data):
         """Helper method to convert datetime objects to ISO format strings"""
