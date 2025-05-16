@@ -318,57 +318,48 @@ def add_lab_result():
         except ValueError:
             pass  # Keep as string if not convertible
         
-        # Get current patient data
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-        
-        # Add the new lab result
-        if 'lab_results' not in patient:
-            patient['lab_results'] = []
-        patient['lab_results'].append(lab_data)
-        
-        # Update the patient
-        update_response = requests.put(
-            f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-            json=patient
+        response = requests.post(
+            f"{MEDICAL_RECORDS_API}/patients/{patient_id}/lab_results",
+            json=lab_data
         )
-        update_response.raise_for_status()
+        response.raise_for_status()
         print("Lab result added successfully!")
     except requests.exceptions.HTTPError as err:
         print(f"Error adding lab result: {err}")
     except Exception as err:
         print(f"Error: {err}")
 
+from datetime import datetime
+
 def add_prescription():
     patient_id = input("Enter patient ID: ")
     print("\nEnter prescription details:")
+    
+    while True:
+        date_str = input("Date prescribed (YYYY-MM-DD): ")
+        try:
+            # Validar y convertir a formato ISO
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            iso_date = date_obj.isoformat()
+            break
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD format.")
+    
     prescription_data = {
         "medication": input("Medication: "),
         "dosage": input("Dosage: "),
         "frequency": input("Frequency: "),
         "doctor_id": input("Doctor ID: "),
         "route": input("Route (oral, IV, etc): "),
-        "date_prescribed": input("Date prescribed (YYYY-MM-DD): ")
+        "date_prescribed": iso_date  # Usamos la fecha ya validada
     }
     
     try:
-        # Get current patient data
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-        
-        # Add the new prescription
-        if 'prescriptions' not in patient:
-            patient['prescriptions'] = []
-        patient['prescriptions'].append(prescription_data)
-        
-        # Update the patient
-        update_response = requests.put(
-            f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-            json=patient
+        response = requests.post(
+            f"{MEDICAL_RECORDS_API}/patients/{patient_id}/prescriptions",
+            json=prescription_data
         )
-        update_response.raise_for_status()
+        response.raise_for_status()
         print("Prescription added successfully!")
     except requests.exceptions.HTTPError as err:
         print(f"Error adding prescription: {err}")
@@ -378,120 +369,91 @@ def add_prescription():
 def add_consultation():
     patient_id = input("Enter patient ID: ")
     print("\nEnter consultation details:")
+    
+    while True:
+        date_str = input("Date (YYYY-MM-DDTHH:MM:SS): ")
+        try:
+            # Validar el formato de fecha
+            datetime.fromisoformat(date_str)
+            break
+        except ValueError:
+            print("Invalid date format. Please use ISO format (YYYY-MM-DDTHH:MM:SS)")
+    
     consultation_data = {
         "doctor_id": input("Doctor ID: "),
-        "date": input("Date (YYYY-MM-DDTHH:MM:SS): "),
+        "date": date_str,
         "reason": input("Reason: "),
         "notes": input("Notes: ")
     }
     
     try:
-        # Get current patient data
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
+        response = requests.post(
+            f"{MEDICAL_RECORDS_API}/patients/{patient_id}/consultations",
+            json=consultation_data
+        )
         response.raise_for_status()
-        patient = response.json()
-        
-        # Add the new consultation
-        if 'consultations' not in patient:
-            patient['consultations'] = []
-        patient['consultations'].append(consultation_data)
-        
-        # Update the patient
-        update_response = requests.put(
-            f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-            json=patient
-        )
-        update_response.raise_for_status()
         print("Consultation added successfully!")
     except requests.exceptions.HTTPError as err:
-        print(f"Error adding consultation: {err}")
-    except Exception as err:
-        print(f"Error: {err}")
-    
-    try:
-        # First get the current patient data
-        patient_response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        patient_response.raise_for_status()
-        patient = patient_response.json()
-        
-        # Add the new consultation
-        patient['consultations'].append(consultation_data)
-        
-        # Update the patient
-        update_response = requests.put(
-            f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-            json=patient
-        )
-        update_response.raise_for_status()
-        print("Consultation added successfully!")
-    except requests.exceptions.HTTPError as err:
-        print(f"Error adding consultation: {err}")
+        print(f"Error adding consultation: {err.response.text}")
     except Exception as err:
         print(f"Error: {err}")
 
-def add_disease():
+def add_comorbidity():
     patient_id = input("Enter patient ID: ")
-    disease = input("Enter disease to add: ")
+    comorbidity = input("Enter comorbidity to add: ").strip()
+    
+    if not comorbidity:
+        print("Comorbidity cannot be empty")
+        return
     
     try:
-        # Get current patient data
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
+        response = requests.post(
+            f"{MEDICAL_RECORDS_API}/patients/{patient_id}/comorbidities",
+            json={"comorbidity": comorbidity}
+        )
         
-        # Add the new disease if not already present
-        if 'comorbidities' not in patient:
-            patient['comorbidities'] = []
-        
-        if disease.strip() and disease not in patient['comorbidities']:
-            patient['comorbidities'].append(disease.strip())
-            
-            # Update the patient
-            update_response = requests.put(
-                f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-                json=patient
-            )
-            update_response.raise_for_status()
-            print("Disease added successfully!")
+        if response.status_code == 201:
+            print("Comorbidity added successfully!")
+        elif response.status_code == 200:
+            print("Comorbidity already exists for this patient")
         else:
-            print("Disease already exists for this patient or is empty")
+            response.raise_for_status()
+            
     except requests.exceptions.HTTPError as err:
-        print(f"Error adding disease: {err}")
+        print(f"Error adding comorbidity: {err.response.text}")
     except Exception as err:
         print(f"Error: {err}")
 
 def add_filled_form():
     patient_id = input("Enter patient ID: ")
     print("\nEnter filled form details:")
+    
+    while True:
+        date_str = input("Date filled (YYYY-MM-DD): ")
+        try:
+            datetime.fromisoformat(date_str)
+            break
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD format")
+    
     form_data = {
         "template_id": input("Template ID: "),
         "storage_reference": {
             "cabinet_number": input("Cabinet number: "),
             "file_url": input("File URL: ")
         },
-        "date_filled": input("Date filled (YYYY-MM-DD): ")
+        "date_filled": date_str
     }
     
     try:
-        # Get current patient data
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-        
-        # Add the new form
-        if 'forms_filled' not in patient:
-            patient['forms_filled'] = []
-        patient['forms_filled'].append(form_data)
-        
-        # Update the patient
-        update_response = requests.put(
-            f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-            json=patient
+        response = requests.post(
+            f"{MEDICAL_RECORDS_API}/patients/{patient_id}/forms_filled",
+            json=form_data
         )
-        update_response.raise_for_status()
+        response.raise_for_status()
         print("Filled form added successfully!")
     except requests.exceptions.HTTPError as err:
-        print(f"Error adding filled form: {err}")
+        print(f"Error adding filled form: {err.response.text}")
     except Exception as err:
         print(f"Error: {err}")
 
@@ -505,22 +467,11 @@ def add_allergy():
     }
     
     try:
-        # Get current patient data
-        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
-        response.raise_for_status()
-        patient = response.json()
-        
-        # Add the new allergy
-        if 'allergies' not in patient:
-            patient['allergies'] = []
-        patient['allergies'].append(allergy_data)
-        
-        # Update the patient
-        update_response = requests.put(
-            f"{MEDICAL_RECORDS_API}/patients/{patient_id}",
-            json=patient
+        response = requests.post(
+            f"{MEDICAL_RECORDS_API}/patients/{patient_id}/allergies",
+            json=allergy_data
         )
-        update_response.raise_for_status()
+        response.raise_for_status()
         print("Allergy added successfully!")
     except requests.exceptions.HTTPError as err:
         print(f"Error adding allergy: {err}")
@@ -558,36 +509,113 @@ def delete_doctor():
     else:
         print("Deletion cancelled")
 
+# ========== PIPELINES AGGREGATIONS ==========
+
 def search_last_consultation_doctor():
     patient_id = input("Enter patient ID: ")
-    log.info(f"Searching last consultation doctor for patient: {patient_id}")
+    log.info(f"Searching last consultation doctor for patient ID: {patient_id}")
+    try:
+        # Obtener los datos del paciente (incluye historial de consultas)
+        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
+        response.raise_for_status()
+        patient = response.json()
+
+        consultations = patient.get("consultations", [])
+        if not consultations:
+            print(f"No consultations found for patient ID {patient_id}")
+            return
+
+        # Suponiendo que las consultas tienen un campo "date" en formato ISO o similar
+        last_consultation = sorted(consultations, key=lambda x: x.get("date", ""), reverse=True)[0]
+        doctor_id = last_consultation.get("doctor_id")
+
+        if not doctor_id:
+            print("Last consultation does not have a doctor associated.")
+            return
+
+        # Buscar información del doctor
+        doctor_response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
+        doctor_response.raise_for_status()
+        doctor = doctor_response.json()
+
+        # Mostrar solo nombre, teléfono y licencia
+        print("\nDoctor from Last Consultation:")
+        print(tabulate(
+            [
+                ["Name", ("Dr " + doctor.get("full_name", "N/A"))],
+                ["Phone", doctor.get("phone_number", "N/A")],
+                ["License", doctor.get("license_number", "N/A")]
+            ],
+            headers=["Field", "Value"],
+            tablefmt="grid"
+        ))
+
+    except requests.exceptions.HTTPError as err:
+        if response.status_code == 404:
+            print(f"Patient with ID {patient_id} not found")
+        else:
+            print(f"HTTP error: {err}")
+    except Exception as err:
+        print(f"Unexpected error: {err}")
+
+def show_templates_filled_by_patient():
+    patient_id = input("Enter patient ID: ")
+    log.info(f"Searching filled templates for patient ID: {patient_id}")
     try:
         response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
         response.raise_for_status()
         patient = response.json()
-        
-        if patient and 'consultations' in patient and patient['consultations']:
-            # Ordenar consultas por fecha (más reciente primero)
-            sorted_consults = sorted(
-                patient['consultations'], 
-                key=lambda x: x['date'], 
-                reverse=True
-            )
-            last_consult = sorted_consults[0]
-            doctor_id = last_consult['doctor_id']
-            
-            # Obtener información del doctor
-            doctor_response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
-            doctor_response.raise_for_status()
-            doctor = doctor_response.json()
-            
-            print("\nDoctor from last consultation:")
-            print(f"Name: {doctor['full_name']}")
-            print(f"Specialty: {doctor['specialty']}")
-            print(f"License: {doctor['license_number']}")
-            print(f"Contact: {doctor['phone_number']}")
+        if 'forms_filled' in patient and patient['forms_filled']:
+            print("\nFilled Templates:")
+            for form in patient['forms_filled']:
+                print(f"\nTemplate ID: {form['template_id']}")
+                print(f"Date Filled: {form['date_filled']}")
+                print(f"Storage Reference: {form['storage_reference']}")
         else:
-            print("No consultations recorded for this patient")
+            print("No filled templates found for this patient")
+    except Exception as err:
+        print(f"Error: {err}")
+
+def show_doctors_who_attended_patient():
+    patient_id = input("Enter patient ID: ")
+    log.info(f"Searching doctors who attended patient ID: {patient_id}")
+    try:
+        response = requests.get(f"{MEDICAL_RECORDS_API}/patients/{patient_id}")
+        response.raise_for_status()
+        patient = response.json()
+        if 'consultations' in patient and patient['consultations']:
+            print("\nDoctors who attended this patient:")
+            for consult in patient['consultations']:
+                doctor_id = consult['doctor_id']
+                doctor_response = requests.get(f"{MEDICAL_RECORDS_API}/doctors/{doctor_id}")
+                doctor_response.raise_for_status()
+                doctor = doctor_response.json()
+                print(f"\nDoctor ID: {doctor['doctor_id']}")
+                print(f"Name: {doctor['full_name']}")
+                print(f"Specialty: {doctor['specialty']}")
+        else:
+            print("No consultations found for this patient")
+    except Exception as err:
+        print(f"Error: {err}")
+
+def show_patients_prescribed_medication():
+    medication = input("Enter medication name: ")
+    log.info(f"Searching patients prescribed with medication: {medication}")
+    try:
+        response = requests.get(f"{MEDICAL_RECORDS_API}/patients")
+        response.raise_for_status()
+        patients = response.json()
+        found_patients = [p for p in patients if any(med['medication'] == medication for med in p.get('prescriptions', []))]
+        
+        if found_patients:
+            print("\nPatients prescribed with medication:")
+            for patient in found_patients:
+                print(f"\nPatient ID: {patient['patient_id']}")
+                print(f"Name: {patient['full_name']}")
+                print(f"Phone Number: {patient['phone']}")
+                print(f"Prescriptions: {[med['medication'] for med in patient.get('prescriptions', [])]}")
+        else:
+            print("No patients found with that medication")
     except Exception as err:
         print(f"Error: {err}")
 
@@ -595,10 +623,11 @@ def search_last_consultation_doctor():
 def print_menu():
     print("\n=== Medical Records System ===")
     print("1. Search")
-    print("2. See All Data")
-    print("3. Add")
-    print("4. Delete")
-    print("5. Exit")
+    print("2. Pipelines Agregations")
+    print("3. See All Data")
+    print("4. Add")
+    print("5. Delete")
+    print("6. Exit")
 
 def print_search_menu():
     print("\n=== Search Options ===")
@@ -611,8 +640,7 @@ def print_search_menu():
     print("7. Search Patient Allergies")
     print("8. Search Prescriptions by Date")
     print("9. Search Prescriptions by Medication")
-    print("10. Search Last Consultation Doctor")
-    print("11. Back to Main Menu")
+    print("10. Back to Main Menu")
 
 def print_add_menu():
     print("\n=== Add Options ===")
@@ -621,10 +649,18 @@ def print_add_menu():
     print("3. Add Lab Result")
     print("4. Add Prescription")
     print("5. Add Consultation")
-    print("6. Add Disease")
+    print("6. Add Comorbidity")
     print("7. Add Filled Form")
     print("8. Add Allergy")
     print("9. Back to Main Menu")
+
+def print_pipelines_menu():
+    print("\n=== Pipelines Aggregations ===")
+    print("1. Search Last Consultation Doctor")
+    print("2. Show Templates filled by patient")
+    print("3. Show Docctors who attended patient")
+    print("4. Show Patients prescribed medication")
+    print("5. Back to Main Menu")
 
 def main():
     log.info(f"Welcome to the Medical Records API client!")
@@ -633,9 +669,9 @@ def main():
     while True:
         print_menu()
         try:
-            choice = int(input("Select an option (1-5): "))
+            choice = int(input("Select an option (1-6): "))
         except ValueError:
-            print("Invalid input. Please enter a number between 1 and 5.")
+            print("Invalid input. Please enter a number between 1 and 6.")
             continue
 
         if choice == 1:  # Search
@@ -666,13 +702,33 @@ def main():
                 elif search_choice == 9:
                     search_patient_prescriptions_by_medication()
                 elif search_choice == 10:
-                    search_last_consultation_doctor()
-                elif search_choice == 11:
                     break
                 else:
                     print("Invalid choice. Please select a valid option.")
 
-        elif choice == 2:  # See All Data
+        elif choice == 2:  # Pipelines Aggregations
+            while True:
+                print_pipelines_menu()
+                try:
+                    pipeline_choice = int(input("Select pipeline option (1-5): "))
+                except ValueError:
+                    print("Invalid input. Please enter a number between 1 and 5.")
+                    continue
+                
+                if pipeline_choice == 1:
+                    search_last_consultation_doctor()
+                elif pipeline_choice == 2:
+                    show_templates_filled_by_patient()
+                elif pipeline_choice == 3:
+                    show_doctors_who_attended_patient()
+                elif pipeline_choice == 4:
+                    show_patients_prescribed_medication()
+                elif pipeline_choice == 5:
+                    break;
+                else:
+                    print("Invalid choice. Please select a valid option.")
+
+        elif choice == 3:  # See All Data
             print("\n=== See All Data ===")
             print("1. List All Patients")
             print("2. List All Doctors")
@@ -693,7 +749,7 @@ def main():
             else:
                 print("Invalid choice. Please select a valid option.")
 
-        elif choice == 3:  # Add
+        elif choice == 4:  # Add
             while True:
                 print_add_menu()
                 try:
@@ -713,7 +769,7 @@ def main():
                 elif add_choice == 5:
                     add_consultation()
                 elif add_choice == 6:
-                    add_disease()
+                    add_comorbidity()
                 elif add_choice == 7:
                     add_filled_form()
                 elif add_choice == 8:
@@ -723,7 +779,7 @@ def main():
                 else:
                     print("Invalid choice. Please select a valid option.")
 
-        elif choice == 4:  # Delete
+        elif choice == 5:  # Delete
             print("\n=== Delete Options ===")
             print("1. Delete Patient")
             print("2. Delete Doctor")
@@ -744,7 +800,7 @@ def main():
             else:
                 print("Invalid choice. Please select a valid option.")
 
-        elif choice == 5:  # Exit
+        elif choice == 6:  # Exit
             print("Exiting the program. Goodbye!")
             break
         else:

@@ -10,7 +10,14 @@ from resources import (
     DoctorResource,
     DoctorsResource,
     FormTemplateResource,
-    FormTemplatesResource
+    FormTemplatesResource,
+    AllergyResource,
+    LabResultResource,
+    PrescriptionResource,
+    ConsultationResource,
+    FilledFormResource,
+    ComorbidityResource
+
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -37,11 +44,22 @@ doctor_resource = DoctorResource(db)
 doctors_resource = DoctorsResource(db)
 form_template_resource = FormTemplateResource(db)
 form_templates_resource = FormTemplatesResource(db)
+allergy_resource = AllergyResource(db)
+lab_result_resource = LabResultResource(db)
+prescription_resource = PrescriptionResource(db)
+consultation_resource = ConsultationResource(db)
+filled_form_resource = FilledFormResource(db)
+comorbidity_resource = ComorbidityResource(db)
 
 # Add routes
 app.add_route('/patients', patients_resource)
 app.add_route('/patients/{patient_id}', patient_resource)
+app.add_route('/patients/{patient_id}/allergies', allergy_resource)
+app.add_route('/patients/{patient_id}/lab_results', lab_result_resource)
+app.add_route('/patients/{patient_id}/prescriptions', prescription_resource)
+app.add_route('/patients/{patient_id}/consultations', consultation_resource)
+app.add_route('/patients/{patient_id}/forms_filled', filled_form_resource)
+app.add_route('/patients/{patient_id}/comorbidities', comorbidity_resource)
 app.add_route('/doctors', doctors_resource)
 app.add_route('/doctors/{doctor_id}', doctor_resource)
 app.add_route('/form_templates', form_templates_resource)
-app.add_route('/form_templates/{template_id}', form_template_resource)

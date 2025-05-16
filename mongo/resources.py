@@ -398,6 +398,43 @@ class PrescriptionResource:
         else:
             resp.status = falcon.HTTP_404
 
+    async def on_post(self, req, resp, patient_id):
+        """Add a new prescription for a patient"""
+        try:
+            prescription_data = await req.get_media()
+            
+            # Validar y convertir la fecha a datetime
+            try:
+                date_str = prescription_data['date_prescribed']
+                if isinstance(date_str, str):
+                    # Si es string, convertir a datetime
+                    date_obj = datetime.fromisoformat(date_str)
+                    prescription_data['date_prescribed'] = date_obj
+                elif not isinstance(date_str, datetime):
+                    raise ValueError("Invalid date format")
+            except (KeyError, ValueError) as e:
+                raise ValueError("Invalid or missing date_prescribed field. Use ISO format (YYYY-MM-DD)") from e
+            
+            # Actualizar el documento del paciente
+            result = self.db.patients.update_one(
+                {"patient_id": patient_id},
+                {"$push": {"prescriptions": prescription_data}}
+            )
+            
+            if result.modified_count == 1:
+                resp.status = falcon.HTTP_201
+                resp.media = {"message": "Prescription added successfully"}
+            else:
+                resp.status = falcon.HTTP_404
+                resp.media = {"error": "Patient not found"}
+                
+        except ValueError as e:
+            resp.status = falcon.HTTP_400  # Bad Request
+            resp.media = {"error": str(e)}
+        except Exception as e:
+            resp.status = falcon.HTTP_500
+            resp.media = {"error": f"Internal server error: {str(e)}"}
+
 class AllergyResource:
     def __init__(self, db):
         self.db = db
@@ -520,3 +557,119 @@ class FormTemplatesResource:
             raise e
         except Exception as e:
             raise falcon.HTTPInternalServerError(description=str(e))
+
+class ConsultationResource:
+    def __init__(self, db):
+        self.db = db
+
+    async def on_post(self, req, resp, patient_id):
+        """Add a new consultation for a patient"""
+        try:
+            consultation_data = await req.get_media()
+            
+            # Validar y convertir la fecha
+            try:
+                date_str = consultation_data['date']
+                consultation_data['date'] = datetime.fromisoformat(date_str)
+            except (KeyError, ValueError) as e:
+                raise ValueError("Invalid or missing date field. Use ISO format (YYYY-MM-DDTHH:MM:SS)") from e
+            
+            # Actualizar el documento del paciente
+            result = self.db.patients.update_one(
+                {"patient_id": patient_id},
+                {"$push": {"consultations": consultation_data}}
+            )
+            
+            if result.modified_count == 1:
+                resp.status = falcon.HTTP_201
+                resp.media = {"message": "Consultation added successfully"}
+            else:
+                resp.status = falcon.HTTP_404
+                resp.media = {"error": "Patient not found"}
+                
+        except ValueError as e:
+            resp.status = falcon.HTTP_400
+            resp.media = {"error": str(e)}
+        except Exception as e:
+            resp.status = falcon.HTTP_500
+            resp.media = {"error": f"Internal server error: {str(e)}"}
+
+class FilledFormResource:
+    def __init__(self, db):
+        self.db = db
+
+    async def on_post(self, req, resp, patient_id):
+        """Add a filled form to patient's records"""
+        try:
+            form_data = await req.get_media()
+            
+            # Validar y convertir la fecha
+            try:
+                date_str = form_data['date_filled']
+                form_data['date_filled'] = datetime.fromisoformat(date_str)
+            except (KeyError, ValueError) as e:
+                raise ValueError("Invalid or missing date_filled field. Use ISO format (YYYY-MM-DD)") from e
+            
+            # Validar campos obligatorios
+            if not form_data.get('template_id'):
+                raise ValueError("Template ID is required")
+            if not form_data.get('storage_reference', {}).get('cabinet_number'):
+                raise ValueError("Cabinet number is required")
+            
+            # Actualizar el documento del paciente
+            result = self.db.patients.update_one(
+                {"patient_id": patient_id},
+                {"$push": {"forms_filled": form_data}}
+            )
+            
+            if result.modified_count == 1:
+                resp.status = falcon.HTTP_201
+                resp.media = {"message": "Filled form added successfully"}
+            else:
+                resp.status = falcon.HTTP_404
+                resp.media = {"error": "Patient not found"}
+                
+        except ValueError as e:
+            resp.status = falcon.HTTP_400
+            resp.media = {"error": str(e)}
+        except Exception as e:
+            resp.status = falcon.HTTP_500
+            resp.media = {"error": f"Internal server error: {str(e)}"}
+
+class ComorbidityResource:
+    def __init__(self, db):
+        self.db = db
+
+    async def on_post(self, req, resp, patient_id):
+        """Add a comorbidity to patient's record"""
+        try:
+            data = await req.get_media()
+            comorbidity = data.get('comorbidity', '').strip()
+            
+            if not comorbidity:
+                raise ValueError("Comorbidity cannot be empty")
+            
+            # Update patient document
+            result = self.db.patients.update_one(
+                {
+                    "patient_id": patient_id,
+                    "comorbidities": {"$ne": comorbidity}  # Only if not already exists
+                },
+                {
+                    "$push": {"comorbidities": comorbidity}
+                }
+            )
+            
+            if result.modified_count == 1:
+                resp.status = falcon.HTTP_201
+                resp.media = {"message": "Comorbidity added successfully"}
+            else:
+                resp.status = falcon.HTTP_200
+                resp.media = {"message": "Comorbidity already exists for this patient"}
+                
+        except ValueError as e:
+            resp.status = falcon.HTTP_400
+            resp.media = {"error": str(e)}
+        except Exception as e:
+            resp.status = falcon.HTTP_500
+            resp.media = {"error": f"Internal server error: {str(e)}"}
