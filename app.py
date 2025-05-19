@@ -13,6 +13,7 @@ from Cass import cassandraApp
 from mongo import populate
 from mongo import client
 
+
 CLUSTER_IPS = os.getenv('CASSANDRA_CLUSTER_IPS', 'localhost')
 KEYSPACE = os.getenv('CASSANDRA_KEYSPACE', 'healthcare')
 REPLICATION_FACTOR = os.getenv('CASSANDRA_REPLICATION_FACTOR', '1')
@@ -65,7 +66,7 @@ def print_menu():
         print(key, '--', mm_options[key])
 
 def load_data(session): 
-    cassandraApp.bulk_insert(session)
+    cassandraModel.bulk_insert(session)
 
 def createPatient(session):
     os.system("cls")
@@ -184,9 +185,7 @@ def cassandraMain(session):
             appPatient(session, accountData)
 
 
-def dgraph_main():
-    client_stub = create_dgraph_client_stub()
-    client = create_dgraph_client(client_stub)
+def dgraph_main(client, client_stub):
 
     while True:
         print_menu_dgraph()
@@ -300,6 +299,8 @@ def main():
     cassandraModel.create_keyspace(cassandraSession, KEYSPACE, REPLICATION_FACTOR)
     cassandraSession.set_keyspace(KEYSPACE)
     cassandraModel.create_schema(cassandraSession)
+    client_stub = create_dgraph_client_stub()
+    client = create_dgraph_client(client_stub)
 
     while True:
         print_menu()
@@ -313,7 +314,7 @@ def main():
             client.main()
             pass
         elif option == 2:
-            dgraph_main()
+            dgraph_main(client, client_stub)
 
             #open dgraph
             pass
@@ -321,6 +322,8 @@ def main():
             #Load data
             load_data(cassandraSession)
             populate.main() ## Populate MongoDB
+            model.set_schema(client)
+            model.load_data(client)
             pass
         elif option == 4:
             print("*** Exiting ****")

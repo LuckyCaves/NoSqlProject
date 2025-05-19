@@ -17,7 +17,7 @@ handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(
 log.addHandler(handler)
 
 # Read env vars to API connection
-MEDICAL_RECORDS_API = os.getenv('MEDICAL_RECORDS_API', "http://localhost:8000")
+MEDICAL_RECORDS_API = os.getenv('MEDICAL_RECORDS_API', "http://localhost:9100")
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client.medical_records
@@ -743,10 +743,9 @@ def show_patients_prescribed_medication():
 def print_menu():
     print("\n=== Medical Records System ===")
     print("1. Search")
-    print("2. Pipelines Agregations")
-    print("3. See All Data")
-    print("4. Add")
-    print("5. Exit")
+    print("2. See All Data")
+    print("3. Add")
+    print("4. Exit")
 
 def print_search_menu():
     print("\n=== Search Options ===")
@@ -817,6 +816,14 @@ def main():
                 elif search_choice == 9:
                     search_patient_prescriptions_by_medication()
                 elif search_choice == 10:
+                    search_last_consultation_doctor()
+                elif search_choice == 11:
+                    show_templates_filled_by_patient()
+                elif search_choice == 12:
+                    show_doctors_who_attended_patient()
+                elif search_choice == 13:
+                    show_patients_prescribed_medication()
+                elif search_choice == 14:
                     break
                 else:
                     print("Invalid choice. Please select a valid option.")

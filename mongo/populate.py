@@ -5,10 +5,10 @@ import ast
 from datetime import datetime
 import json
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = "http://127.0.0.1:9100"
 
 def create_patients():
-    with open("../data/patients_MONGO.csv", encoding="utf-8") as fd:
+    with open("./data/patients_MONGO.csv", encoding="utf-8") as fd:
         patients_csv = csv.DictReader(fd)
         for patient in patients_csv:
             try:
@@ -54,7 +54,7 @@ def create_patients():
 
 
 def create_doctors():
-    with open("../data/doctors.csv", encoding="utf-8") as fd:
+    with open("./data/doctors.csv", encoding="utf-8") as fd:
         doctors_csv = csv.DictReader(fd)
         for doctor in doctors_csv:
             try:
@@ -80,7 +80,7 @@ def create_doctors():
                 print(f"Error procesando doctor {doctor.get('full_name', 'UNKNOWN')}: {e}")              
 
 def create_templates():
-    with open("../data/templates.csv", encoding="utf-8") as fd:
+    with open("./data/templates.csv", encoding="utf-8") as fd:
         templates_csv = csv.DictReader(fd)
         for template in templates_csv:
             try:
