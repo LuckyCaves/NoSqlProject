@@ -322,8 +322,7 @@ def main():
             #Load data
             load_data(cassandraSession)
             populate.main() ## Populate MongoDB
-            model.set_schema(client)
-            model.load_data(client)
+
             pass
         elif option == 4:
             print("*** Exiting ****")
