@@ -8,6 +8,9 @@ from cassandra.cluster import Cluster
 from Cass import cassandraModel
 from Cass import cassandraApp
 
+from mongo import populate
+from mongo import client
+
 CLUSTER_IPS = os.getenv('CASSANDRA_CLUSTER_IPS', 'localhost')
 KEYSPACE = os.getenv('CASSANDRA_KEYSPACE', 'healthcare')
 REPLICATION_FACTOR = os.getenv('CASSANDRA_REPLICATION_FACTOR', '1')
@@ -182,7 +185,7 @@ def main():
             #Open Cassandra
             pass
         elif option == 1:
-            #Open Mongo
+            client.main()
             pass
         elif option == 2:
             #open dgraph
@@ -190,6 +193,7 @@ def main():
         elif option == 3:
             #Load data
             load_data(cassandraSession)
+            populate.main() ## Populate MongoDB
             pass
         elif option == 4:
             print("*** Exiting ****")

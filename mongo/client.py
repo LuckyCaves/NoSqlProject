@@ -482,7 +482,7 @@ def add_allergy():
     except Exception as err:
         print(f"Error: {err}")
 
-# ========== DELETE FUNCTIONS ==========
+# ========== DELETE FUNCTIONS ========== NO SE USAN PERO SIRVEN PARA CIERTOS CASOS
 def delete_patient():
     patient_id = input("Enter patient ID to delete: ")
     confirm = input(f"Are you sure you want to delete patient {patient_id}? (y/n): ")
@@ -746,8 +746,7 @@ def print_menu():
     print("2. Pipelines Agregations")
     print("3. See All Data")
     print("4. Add")
-    print("5. Delete")
-    print("6. Exit")
+    print("5. Exit")
 
 def print_search_menu():
     print("\n=== Search Options ===")
@@ -760,7 +759,11 @@ def print_search_menu():
     print("7. Search Patient Allergies")
     print("8. Search Prescriptions by Date")
     print("9. Search Prescriptions by Medication")
-    print("10. Back to Main Menu")
+    print("10. Search Last Consultation Doctor")
+    print("11. Show Templates filled by patient")
+    print("12. Show Docctors who attended patient")
+    print("13. Show Patients prescribed medication")
+    print("14. Back to Main Menu")
 
 def print_add_menu():
     print("\n=== Add Options ===")
@@ -774,14 +777,6 @@ def print_add_menu():
     print("8. Add Allergy")
     print("9. Back to Main Menu")
 
-def print_pipelines_menu():
-    print("\n=== Pipelines Aggregations ===")
-    print("1. Search Last Consultation Doctor")
-    print("2. Show Templates filled by patient")
-    print("3. Show Docctors who attended patient")
-    print("4. Show Patients prescribed medication")
-    print("5. Back to Main Menu")
-
 def main():
     log.info(f"Welcome to the Medical Records API client!")
     log.info(f"Connecting to API at {MEDICAL_RECORDS_API}")
@@ -789,7 +784,7 @@ def main():
     while True:
         print_menu()
         try:
-            choice = int(input("Select an option (1-6): "))
+            choice = int(input("Select an option (1-5): "))
         except ValueError:
             print("Invalid input. Please enter a number between 1 and 6.")
             continue
@@ -826,29 +821,7 @@ def main():
                 else:
                     print("Invalid choice. Please select a valid option.")
 
-        elif choice == 2:  # Pipelines Aggregations
-            while True:
-                print_pipelines_menu()
-                try:
-                    pipeline_choice = int(input("Select pipeline option (1-5): "))
-                except ValueError:
-                    print("Invalid input. Please enter a number between 1 and 5.")
-                    continue
-                
-                if pipeline_choice == 1:
-                    search_last_consultation_doctor()
-                elif pipeline_choice == 2:
-                    show_templates_filled_by_patient()
-                elif pipeline_choice == 3:
-                    show_doctors_who_attended_patient()
-                elif pipeline_choice == 4:
-                    show_patients_prescribed_medication()
-                elif pipeline_choice == 5:
-                    break;
-                else:
-                    print("Invalid choice. Please select a valid option.")
-
-        elif choice == 3:  # See All Data
+        elif choice == 2:  # See All Data
             print("\n=== See All Data ===")
             print("1. List All Patients")
             print("2. List All Doctors")
@@ -869,7 +842,7 @@ def main():
             else:
                 print("Invalid choice. Please select a valid option.")
 
-        elif choice == 4:  # Add
+        elif choice == 3:  # Add
             while True:
                 print_add_menu()
                 try:
@@ -899,28 +872,7 @@ def main():
                 else:
                     print("Invalid choice. Please select a valid option.")
 
-        elif choice == 5:  # Delete
-            print("\n=== Delete Options ===")
-            print("1. Delete Patient")
-            print("2. Delete Doctor")
-            print("3. Back to Main Menu")
-            
-            try:
-                delete_choice = int(input("Select option (1-3): "))
-            except ValueError:
-                print("Invalid input. Please enter a number between 1 and 3.")
-                continue
-            
-            if delete_choice == 1:
-                delete_patient()
-            elif delete_choice == 2:
-                delete_doctor()
-            elif delete_choice == 3:
-                continue
-            else:
-                print("Invalid choice. Please select a valid option.")
-
-        elif choice == 6:  # Exit
+        elif choice == 4:  # Exit
             print("Exiting the program. Goodbye!")
             break
         else:
