@@ -1149,80 +1149,6 @@ def get_team_composition_and_patients_by_name(client, team_name_value):
 
 
 
-def get_team_composition_and_patients(client, team_id_value):
-    query = """
-    query GetTeamInfo($team_id_filter: string!) {
-      team_details(func: eq(team_id, $team_id_filter)) {
-        uid
-        team_id
-        name_of_team: name
-        formation_date
-        purpose
-
-        patients_treated_by_team: treats @filter(has(patient_id)) {
-          uid
-          patient_id
-          name_of_patient: name
-        }
-
-        doctors_in_team: ~part_of @filter(has(doctor_id)) {
-          uid
-          doctor_id
-          name_of_doctor: name
-        }
-      }
-    }
-    """
-    variables = {'$team_id_filter': team_id_value}
-    res = client.txn(read_only=True).query(query, variables=variables)
-    data = json.loads(res.json)
-
-    print(f"\n--- Reporte de Composición del Equipo ID: {team_id_value} ---")
-
-    if not data.get('team_details'):
-        print("No se encontró información para el equipo especificado.")
-        print("--- Fin del Reporte ---")
-        return
-
-    team_list = data['team_details']
-
-    if not team_list:
-        print(f"Equipo con ID '{team_id_value}' no encontrado.")
-        print("--- Fin del Reporte ---")
-        return
-
-    team_data = team_list[0]
-
-    print("\nInformación del Equipo Médico:")
-    print(f"  ID del Equipo: {team_data.get('team_id', 'N/A')}")
-    print(f"  Nombre del Equipo: {team_data.get('name_of_team', 'N/A')}")
-    print(f"  Fecha de Formación: {team_data.get('formation_date', 'N/A')}")
-    print(f"  Propósito: {team_data.get('purpose', 'N/A')}")
-
-    doctors = team_data.get('doctors_in_team', [])
-    patients = team_data.get('patients_treated_by_team', [])
-
-    if not doctors:
-        print("\nEste equipo no tiene doctores asignados actualmente.")
-    else:
-        print("\nDoctores en el Equipo:")
-        for i, doctor in enumerate(doctors, 1):
-            print(f"\n  Doctor {i}:")
-            print(f"    ID del Doctor: {doctor.get('doctor_id', 'N/A')}")
-            print(f"    Nombre: {doctor.get('name_of_doctor', 'N/A')}")
-
-    if not patients:
-        print("\nEste equipo no tiene pacientes asignados actualmente.")
-    else:
-        print("\nPacientes Tratados por el Equipo:")
-        for i, patient in enumerate(patients, 1):
-            print(f"\n  Paciente {i}:")
-            print(f"    ID del Paciente: {patient.get('patient_id', 'N/A')}")
-            print(f"    Nombre: {patient.get('name_of_patient', 'N/A')}")
-
-    print("\n--- Fin del Reporte ---")
-
-
 def check_family_hereditary_disease_risk(client, patient_id_value):
     query = """
     query CheckFamilyRiskSimple($patientId: string!) {
@@ -1350,10 +1276,6 @@ def get_medication_interactions_by_name(client, medication_name_value):
             print(f"    Nombre: {inter.get('name_of_interacting_medication', 'N/A')}")
 
     print("\n--- Fin del Reporte ---")
-
-
-
-
 
 
 def get_treatment_effectiveness(client, treatment_id_value):
