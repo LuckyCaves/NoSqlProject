@@ -52,13 +52,13 @@ def set_schema(client):
     has_symptom: [uid] .
     attends: [uid] @reverse .
     recomends: [uid] @reverse .
-    specializes: [uid] .
-    part_of: [uid] .
-    cure: [uid] .
+    specializes: [uid] @reverse .
+    part_of: [uid] @reverse .
+    cure: [uid] @reverse .
     has_medication: [uid] .
     interact_with: [uid] @reverse .
     cause: [uid] .
-    treats: [uid] @reverse .
+    treats: [uid] .
     diagnosed: [uid] .
     require: [uid] .
   
@@ -655,7 +655,40 @@ def get_doctors_for_patient(client, patient_id_value):
     variables = {'$patient_id': patient_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+    print(f"\n--- Reporte de Médicos para el Paciente ID: {patient_id_value} ---")
+
+    if not data.get('patient'):
+        print("No se encontró información para el paciente especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    patient_list = data['patient']
+
+    if not patient_list:
+        print(f"Paciente con ID '{patient_id_value}' no encontrado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    patient_data = patient_list[0]
+    
+    print("\nInformación del Paciente:")
+    print(f"  ID del Paciente: {patient_data.get('patient_id', 'N/A')}")
+    print(f"  Nombre: {patient_data.get('name', 'N/A')}")
+
+    doctors_list = patient_data.get('~attends', []) 
+
+    if not doctors_list:
+        print("\nEste paciente no tiene médicos asignados actualmente.")
+    else:
+        print("\nMédicos que atienden al paciente:")
+        for i, doctor in enumerate(doctors_list, 1):
+            print(f"\n  Médico {i}:")
+            print(f"    ID del Doctor: {doctor.get('doctor_id', 'N/A')}")
+            print(f"    Nombre: {doctor.get('name', 'N/A')}")
+            print(f"    Número de Licencia: {doctor.get('license_number', 'N/A')}")
+            print(f"    Años de Experiencia: {doctor.get('years_experience', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
 
 
 def get_patients_for_doctor(client, doctor_id_value):
@@ -669,7 +702,6 @@ def get_patients_for_doctor(client, doctor_id_value):
           uid
           patient_id
           name
-          date_of_birth
           gender
           blood_type
         }
@@ -679,7 +711,40 @@ def get_patients_for_doctor(client, doctor_id_value):
     variables = {'$doctor_id': doctor_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+    print(f"\n--- Reporte de Pacientes para el Doctor ID: {doctor_id_value} ---")
+
+    if not data.get('doctor'):
+        print("No se encontró información para el doctor especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    doctor_list = data['doctor']
+
+    if not doctor_list:
+        print(f"Doctor con ID '{doctor_id_value}' no encontrado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    doctor_data = doctor_list[0]
+    
+    print("\nInformación del Doctor:")
+    print(f"  ID del Doctor: {doctor_data.get('doctor_id', 'N/A')}")
+    print(f"  Nombre: {doctor_data.get('name', 'N/A')}")
+
+    patients_list = doctor_data.get('attends', [])
+
+    if not patients_list:
+        print("\nEste doctor no tiene pacientes asignados actualmente.")
+    else:
+        print("\nPacientes atendidos por este doctor:")
+        for i, patient in enumerate(patients_list, 1):
+            print(f"\n  Paciente {i}:")
+            print(f"    ID del Paciente: {patient.get('patient_id', 'N/A')}")
+            print(f"    Nombre: {patient.get('name', 'N/A')}")
+            print(f"    Género: {patient.get('gender', 'N/A')}")
+            print(f"    Tipo de Sangre: {patient.get('blood_type', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
 
 
 
@@ -710,8 +775,6 @@ def get_patient_health_summary(client, patient_id_value):
               treatment_id
               name
               description
-              start_date
-              end_date
               effectiveness_score
               
               has_medication { 
@@ -731,14 +794,76 @@ def get_patient_health_summary(client, patient_id_value):
     variables = {'$patient_id': patient_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+    print(f"\n--- Resumen de Salud para el Paciente ID: {patient_id_value} ---")
+
+    if not data.get('patient'):
+        print("No se encontró información para el paciente especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    patient_data = data['patient'][0]
+    
+    print("\nInformación del Paciente:")
+    print(f"  ID del Paciente: {patient_data.get('patient_id', 'N/A')}")
+    print(f"  Nombre: {patient_data.get('name', 'N/A')}")
+
+    symptoms = patient_data.get('has_symptom', [])
+    if not symptoms:
+        print("\nNo se encontraron síntomas registrados para este paciente.")
+    else:
+        print("\nSíntomas registrados:")
+        for i, symptom in enumerate(symptoms, 1):
+            print(f"\n  Síntoma {i}:")
+            print(f"    ID: {symptom.get('symptom_id', 'N/A')}")
+            print(f"    Nombre: {symptom.get('name', 'N/A')}")
+            print(f"    Descripción: {symptom.get('description', 'N/A')}")
+            print(f"    Severidad: {symptom.get('severity', 'N/A')}")
+            
+            diagnoses = symptom.get('diagnosed', [])
+            if not diagnoses:
+                print("    → No se encontraron diagnósticos para este síntoma.")
+            else:
+                print("    Diagnósticos:")
+                for j, diagnosis in enumerate(diagnoses, 1):
+                    print(f"      Diagnóstico {j}:")
+                    print(f"        ID de Enfermedad: {diagnosis.get('disease_id', 'N/A')}")
+                    print(f"        Nombre: {diagnosis.get('name', 'N/A')}")
+                    print(f"        Descripción: {diagnosis.get('description', 'N/A')}")
+                    print(f"        Riesgo Hereditario: {diagnosis.get('hereditary_risk', 'N/A')}")
+                    
+                    cures = diagnosis.get('~cure', [])
+                    if not cures:
+                        print("        → No se encontraron tratamientos para esta enfermedad.")
+                    else:
+                        print("        Tratamientos:")
+                        for k, cure in enumerate(cures, 1):
+                            print(f"          Tratamiento {k}:")
+                            print(f"            ID: {cure.get('treatment_id', 'N/A')}")
+                            print(f"            Nombre: {cure.get('name', 'N/A')}")
+                            print(f"            Descripción: {cure.get('description', 'N/A')}")
+                            print(f"            Efectividad: {cure.get('effectiveness_score', 'N/A')}")
+                            
+                            meds = cure.get('has_medication', [])
+                            if not meds:
+                                print("            → No se encontraron medicamentos asociados.")
+                            else:
+                                print("            Medicamentos:")
+                                for m, med in enumerate(meds, 1):
+                                    print(f"              Medicamento {m}:")
+                                    print(f"                ID: {med.get('medication_id', 'N/A')}")
+                                    print(f"                Nombre: {med.get('name', 'N/A')}")
+                                    print(f"                Dosis: {med.get('dosage', 'N/A')}")
+                                    print(f"                Frecuencia: {med.get('frequency', 'N/A')}")
+                                    print(f"                Vía de Administración: {med.get('route', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
 
 
 
-def get_doctors_by_specialty(client, specialty_id_value):
+def get_doctors_by_specialty_name(client, specialty_name_value):
     query = """
-    query FindDoctorsBySpecialty($specialty_id: string!) {
-      specialty_doctors(func: eq(specialty_id, $specialty_id)) {
+    query FindDoctorsBySpecialtyName($specialtyName: string!) {
+      specialty_doctors(func: eq(name, $specialtyName)) {
         uid
         specialty_id
         name_of_specialty: name 
@@ -754,19 +879,53 @@ def get_doctors_by_specialty(client, specialty_id_value):
     }
     """
     variables = {
-        '$specialty_id': specialty_id_value
+        '$specialtyName': specialty_name_value
     }
     
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) # Opcional: para depuración
+    print(f"\n--- Reporte de Doctores para la Especialidad: \"{specialty_name_value}\" ---")
+
+    if not data.get('specialty_doctors'):
+        print("No se encontró información para la especialidad especificada.")
+        print("--- Fin del Reporte ---")
+        return
+
+    specialty_list = data['specialty_doctors']
+
+    if not specialty_list:
+        print(f"Especialidad con nombre '{specialty_name_value}' no encontrada.")
+        print("--- Fin del Reporte ---")
+        return
+
+    specialty_data = specialty_list[0]
+    
+    print("\nInformación de la Especialidad:")
+    print(f"  ID de la Especialidad: {specialty_data.get('specialty_id', 'N/A')}")
+    print(f"  Nombre: {specialty_data.get('name_of_specialty', 'N/A')}")
+
+    doctors_list = specialty_data.get('doctors_in_specialty', [])
+
+    if not doctors_list:
+        print("\nNo hay doctores registrados con esta especialidad actualmente.")
+    else:
+        print("\nDoctores que tienen esta especialidad:")
+        for i, doctor in enumerate(doctors_list, 1):
+            print(f"\n  Doctor {i}:")
+            print(f"    ID del Doctor: {doctor.get('doctor_id', 'N/A')}")
+            print(f"    Nombre: {doctor.get('name', 'N/A')}")
+            print(f"    Número de Licencia: {doctor.get('license_number', 'N/A')}")
+            print(f"    Años de Experiencia: {doctor.get('years_experience', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
 
 
 
-def get_treatments_and_medications_for_disease_by_id(client, disease_id_value):
+
+def get_treatments_and_medications_for_disease_by_name(client, disease_name_value):
     query = """
-    query FindTreatmentsForDiseaseById($diseaseId: string!) {
-      disease_treatment_info(func: eq(disease_id, $diseaseId)) { 
+    query FindTreatmentsForDiseaseByName($diseaseName: string!) {
+      disease_treatment_info(func: eq(name, $diseaseName)) { 
         uid
         disease_id
         name_of_disease: name 
@@ -793,19 +952,67 @@ def get_treatments_and_medications_for_disease_by_id(client, disease_id_value):
       }
     }
     """
-    variables = {
-        '$diseaseId': disease_id_value 
-    }
+    variables = {'$diseaseName': disease_name_value}
     
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Tratamientos y Medicamentos para la Enfermedad: \"{disease_name_value}\" ---")
+
+    if not data.get('disease_treatment_info'):
+        print("No se encontró información para la enfermedad especificada.")
+        print("--- Fin del Reporte ---")
+        return
+
+    disease_list = data['disease_treatment_info']
+
+    if not disease_list:
+        print(f"Enfermedad con nombre '{disease_name_value}' no encontrada.")
+        print("--- Fin del Reporte ---")
+        return
+
+    disease_data = disease_list[0]
+
+    print("\nInformación de la Enfermedad:")
+    print(f"  ID de la Enfermedad: {disease_data.get('disease_id', 'N/A')}")
+    print(f"  Nombre: {disease_data.get('name_of_disease', 'N/A')}")
+    print(f"  Descripción: {disease_data.get('description_of_disease', 'N/A')}")
+
+    treatments = disease_data.get('recommended_treatments', [])
+
+    if not treatments:
+        print("\nNo hay tratamientos registrados para esta enfermedad.")
+    else:
+        print("\nTratamientos recomendados:")
+        for i, treatment in enumerate(treatments, 1):
+            print(f"\n  Tratamiento {i}:")
+            print(f"    ID del Tratamiento: {treatment.get('treatment_id', 'N/A')}")
+            print(f"    Nombre: {treatment.get('name_of_treatment', 'N/A')}")
+            print(f"    Descripción: {treatment.get('description_of_treatment', 'N/A')}")
+            print(f"    Fecha de Inicio: {treatment.get('start_date', 'N/A')}")
+            print(f"    Fecha de Fin: {treatment.get('end_date', 'N/A')}")
+            print(f"    Efectividad: {treatment.get('effectiveness_score', 'N/A')}")
+
+            medications = treatment.get('medications_in_treatment', [])
+            if not medications:
+                print("    No hay medicamentos registrados para este tratamiento.")
+            else:
+                print("    Medicamentos en este tratamiento:")
+                for j, medication in enumerate(medications, 1):
+                    print(f"      Medicamento {j}:")
+                    print(f"        ID: {medication.get('medication_id', 'N/A')}")
+                    print(f"        Nombre: {medication.get('name_of_medication', 'N/A')}")
+                    print(f"        Dosis: {medication.get('dosage', 'N/A')}")
+                    print(f"        Frecuencia: {medication.get('frequency', 'N/A')}")
+                    print(f"        Vía de Administración: {medication.get('route', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
 
 
-def get_side_effects_for_medication(client, medication_id_value):
+def get_side_effects_for_medication_by_name(client, medication_name_value):
     query = """
-    query FindSideEffects($med_id: string!) {
-      medication_info(func: eq(medication_id, $med_id)) {
+    query FindSideEffects($med_name: string!) {
+      medication_info(func: eq(name, $med_name)) {
         uid
         medication_id
         name_of_medication: name 
@@ -822,13 +1029,124 @@ def get_side_effects_for_medication(client, medication_id_value):
       }
     }
     """
-    variables = {
-        '$med_id': medication_id_value
-    }
+    variables = {'$med_name': medication_name_value}
     
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Efectos Secundarios para el Medicamento: {medication_name_value} ---")
+
+    if not data.get('medication_info'):
+        print("No se encontró información para el medicamento especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    medication_list = data['medication_info']
+
+    if not medication_list:
+        print(f"Medicamento con nombre '{medication_name_value}' no encontrado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    medication_data = medication_list[0]
+
+    print("\nInformación del Medicamento:")
+    print(f"  ID del Medicamento: {medication_data.get('medication_id', 'N/A')}")
+    print(f"  Nombre: {medication_data.get('name_of_medication', 'N/A')}")
+    print(f"  Dosis: {medication_data.get('dosage', 'N/A')}")
+    print(f"  Frecuencia: {medication_data.get('frequency', 'N/A')}")
+    print(f"  Vía de Administración: {medication_data.get('route', 'N/A')}")
+
+    side_effects = medication_data.get('reported_side_effects', [])
+
+    if not side_effects:
+        print("\nEste medicamento no tiene efectos secundarios reportados.")
+    else:
+        print("\nEfectos Secundarios Reportados:")
+        for i, effect in enumerate(side_effects, 1):
+            print(f"\n  Efecto Secundario {i}:")
+            print(f"    ID: {effect.get('effect_id', 'N/A')}")
+            print(f"    Nombre: {effect.get('name_of_side_effect', 'N/A')}")
+            print(f"    Descripción: {effect.get('description_of_side_effect', 'N/A')}")
+            print(f"    Severidad: {effect.get('severity', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
+
+
+
+def get_team_composition_and_patients_by_name(client, team_name_value):
+    query = """
+    query GetTeamInfoByName($team_name_filter: string!) {
+      team_details(func: eq(name, $team_name_filter)) {
+        uid
+        team_id
+        name_of_team: name
+        formation_date
+        purpose
+
+        patients_treated_by_team: treats @filter(has(patient_id)) {
+          uid
+          patient_id
+          name_of_patient: name
+        }
+
+        doctors_in_team: ~part_of @filter(has(doctor_id)) {
+          uid
+          doctor_id
+          name_of_doctor: name
+        }
+      }
+    }
+    """
+    variables = {'$team_name_filter': team_name_value}
+    res = client.txn(read_only=True).query(query, variables=variables)
+    data = json.loads(res.json)
+
+    print(f"\n--- Reporte de Composición del Equipo: \"{team_name_value}\" ---")
+
+    if not data.get('team_details'):
+        print("No se encontró información para el equipo especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    team_list = data['team_details']
+
+    if not team_list:
+        print(f"Equipo con nombre '{team_name_value}' no encontrado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    team_data = team_list[0]
+
+    print("\nInformación del Equipo Médico:")
+    print(f"  ID del Equipo: {team_data.get('team_id', 'N/A')}")
+    print(f"  Nombre del Equipo: {team_data.get('name_of_team', 'N/A')}")
+    print(f"  Fecha de Formación: {team_data.get('formation_date', 'N/A')}")
+    print(f"  Propósito: {team_data.get('purpose', 'N/A')}")
+
+    doctors = team_data.get('doctors_in_team', [])
+    patients = team_data.get('patients_treated_by_team', [])
+
+    if not doctors:
+        print("\nEste equipo no tiene doctores asignados actualmente.")
+    else:
+        print("\nDoctores en el Equipo:")
+        for i, doctor in enumerate(doctors, 1):
+            print(f"\n  Doctor {i}:")
+            print(f"    ID del Doctor: {doctor.get('doctor_id', 'N/A')}")
+            print(f"    Nombre: {doctor.get('name_of_doctor', 'N/A')}")
+
+    if not patients:
+        print("\nEste equipo no tiene pacientes asignados actualmente.")
+    else:
+        print("\nPacientes Tratados por el Equipo:")
+        for i, patient in enumerate(patients, 1):
+            print(f"\n  Paciente {i}:")
+            print(f"    ID del Paciente: {patient.get('patient_id', 'N/A')}")
+            print(f"    Nombre: {patient.get('name_of_patient', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
+
 
 
 def get_team_composition_and_patients(client, team_id_value):
@@ -855,13 +1173,54 @@ def get_team_composition_and_patients(client, team_id_value):
       }
     }
     """
-    variables = {
-        '$team_id_filter': team_id_value
-    }
-    
+    variables = {'$team_id_filter': team_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) # Opcional: para depuración
+
+    print(f"\n--- Reporte de Composición del Equipo ID: {team_id_value} ---")
+
+    if not data.get('team_details'):
+        print("No se encontró información para el equipo especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    team_list = data['team_details']
+
+    if not team_list:
+        print(f"Equipo con ID '{team_id_value}' no encontrado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    team_data = team_list[0]
+
+    print("\nInformación del Equipo Médico:")
+    print(f"  ID del Equipo: {team_data.get('team_id', 'N/A')}")
+    print(f"  Nombre del Equipo: {team_data.get('name_of_team', 'N/A')}")
+    print(f"  Fecha de Formación: {team_data.get('formation_date', 'N/A')}")
+    print(f"  Propósito: {team_data.get('purpose', 'N/A')}")
+
+    doctors = team_data.get('doctors_in_team', [])
+    patients = team_data.get('patients_treated_by_team', [])
+
+    if not doctors:
+        print("\nEste equipo no tiene doctores asignados actualmente.")
+    else:
+        print("\nDoctores en el Equipo:")
+        for i, doctor in enumerate(doctors, 1):
+            print(f"\n  Doctor {i}:")
+            print(f"    ID del Doctor: {doctor.get('doctor_id', 'N/A')}")
+            print(f"    Nombre: {doctor.get('name_of_doctor', 'N/A')}")
+
+    if not patients:
+        print("\nEste equipo no tiene pacientes asignados actualmente.")
+    else:
+        print("\nPacientes Tratados por el Equipo:")
+        for i, patient in enumerate(patients, 1):
+            print(f"\n  Paciente {i}:")
+            print(f"    ID del Paciente: {patient.get('patient_id', 'N/A')}")
+            print(f"    Nombre: {patient.get('name_of_patient', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
 
 
 def check_family_hereditary_disease_risk(client, patient_id_value):
@@ -891,19 +1250,60 @@ def check_family_hereditary_disease_risk(client, patient_id_value):
       }
     }
     """
-    variables = {
-        '$patientId': patient_id_value
-    }
-    
+    variables = {'$patientId': patient_id_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Enfermedades Hereditarias en Familiares del Paciente ID: {patient_id_value} ---")
+
+    patient_data = data.get('initial_patient_data', [])
+    if not patient_data:
+        print("No se encontró información del paciente especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    patient = patient_data[0]
+    print("\nInformación del Paciente:")
+    print(f"  ID del Paciente: {patient.get('patient_id', 'N/A')}")
+    print(f"  Nombre: {patient.get('name_patient', 'N/A')}")
+
+    family_members = patient.get('family_members_with_hereditary_risk', [])
+
+    if not family_members:
+        print("\nNo se encontraron familiares con enfermedades hereditarias registradas.")
+    else:
+        print("\nFamiliares con Enfermedades Hereditarias Detectadas:")
+        for i, member in enumerate(family_members, 1):
+            print(f"\n  Familiar {i}:")
+            print(f"    ID del Familiar: {member.get('patient_id_family', 'N/A')}")
+            print(f"    Nombre: {member.get('name_family', 'N/A')}")
+            symptoms = member.get('symptoms_of_family_member', [])
+
+            if not symptoms:
+                print("    No se encontraron síntomas relacionados.")
+                continue
+
+            for j, symptom in enumerate(symptoms, 1):
+                diseases = symptom.get('diseases_with_hereditary_risk', [])
+                if diseases:
+                    for k, disease in enumerate(diseases, 1):
+                        print(f"    Enfermedad Hereditaria {k}:")
+                        print(f"      ID de la Enfermedad: {disease.get('disease_id', 'N/A')}")
+                        print(f"      Nombre: {disease.get('name_disease', 'N/A')}")
+                        print(f"      Riesgo Hereditario: {disease.get('hereditary_risk', 'N/A')}")
+                        print(f"      Descripción: {disease.get('description_disease', 'N/A')}")
+                else:
+                    print("    No se encontraron enfermedades hereditarias en este familiar.")
+
+    print("\n--- Fin del Reporte ---")
 
 
-def get_medication_interactions(client, medication_id_value):
+
+
+def get_medication_interactions_by_name(client, medication_name_value):
     query = """
-    query FindMedicationInteractions($medId: string!) {
-      medication_interaction_details(func: eq(medication_id, $medId)) {
+    query FindMedicationInteractions($medName: string!) {
+      medication_interaction_details(func: eq(name, $medName)) {
         uid
         medication_id
         name_of_source_medication: name 
@@ -919,13 +1319,40 @@ def get_medication_interactions(client, medication_id_value):
       }
     }
     """
-    variables = {
-        '$medId': medication_id_value
-    }
-    
+    variables = {'$medName': medication_name_value}
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Interacciones del Medicamento: \"{medication_name_value}\" ---")
+
+    med_data = data.get('medication_interaction_details', [])
+    if not med_data:
+        print("No se encontró información para el medicamento especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    medication = med_data[0]
+    print("\nInformación del Medicamento:")
+    print(f"  ID: {medication.get('medication_id', 'N/A')}")
+    print(f"  Nombre: {medication.get('name_of_source_medication', 'N/A')}")
+    print(f"  Dosis: {medication.get('dosage', 'N/A')}")
+    print(f"  Frecuencia: {medication.get('frequency', 'N/A')}")
+    print(f"  Vía de Administración: {medication.get('route', 'N/A')}")
+
+    interactions = medication.get('interacts_with', [])
+    if not interactions:
+        print("\nEste medicamento no tiene interacciones registradas con otros medicamentos.")
+    else:
+        print("\nInteracciones con otros medicamentos:")
+        for i, inter in enumerate(interactions, 1):
+            print(f"\n  Medicamento Interactuante {i}:")
+            print(f"    ID: {inter.get('medication_id', 'N/A')}")
+            print(f"    Nombre: {inter.get('name_of_interacting_medication', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
+
+
+
 
 
 
@@ -940,19 +1367,44 @@ def get_treatment_effectiveness(client, treatment_id_value):
       }
     }
     """
-    variables = {
-        '$treatId': treatment_id_value
-    }
+    variables = {'$treatId': treatment_id_value}
     
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Efectividad del Tratamiento ID: {treatment_id_value} ---")
+
+    treatment_data = data.get('treatment_effectiveness_info', [])
+    if not treatment_data:
+        print("No se encontró información para el tratamiento especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    treatment = treatment_data[0]
+    print("\nInformación del Tratamiento:")
+    print(f"  ID: {treatment.get('treatment_id', 'N/A')}")
+    print(f"  Nombre: {treatment.get('name_of_treatment', 'N/A')}")
+
+    score = treatment.get('effectiveness_score', None)
+    if score is not None:
+        try:
+            percentage = f"{float(score) * 100:.0f}%"
+        except (ValueError, TypeError):
+            percentage = "Formato inválido"
+    else:
+        percentage = "N/A"
+
+    print(f"  Puntaje de Efectividad: {percentage}")
+
+    print("\n--- Fin del Reporte ---")
 
 
-def get_diseases_for_symptom(client, symptom_id_value):
+
+
+def get_diseases_for_symptom_by_name(client, symptom_name_value):
     query = """
-    query FindDiseasesForSymptom($symptomId: string!) {
-      symptom_details(func: eq(symptom_id, $symptomId)) {
+    query FindDiseasesForSymptom($symptomName: string!) {
+      symptom_details(func: eq(name, $symptomName)) {
         uid
         symptom_id
         name_of_symptom: name         
@@ -967,13 +1419,41 @@ def get_diseases_for_symptom(client, symptom_id_value):
       }
     }
     """
-    variables = {
-        '$symptomId': symptom_id_value
-    }
-    
+    variables = {'$symptomName': symptom_name_value}
+
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Enfermedades Relacionadas con el Síntoma: \"{symptom_name_value}\" ---")
+
+    symptom_data_list = data.get('symptom_details', [])
+    if not symptom_data_list:
+        print("No se encontró información para el síntoma especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    symptom = symptom_data_list[0]
+
+    print("\nInformación del Síntoma:")
+    print(f"  ID del Síntoma: {symptom.get('symptom_id', 'N/A')}")
+    print(f"  Nombre: {symptom.get('name_of_symptom', 'N/A')}")
+    print(f"  Descripción: {symptom.get('description_of_symptom', 'N/A')}")
+
+    diseases = symptom.get('diagnosed_diseases', [])
+
+    if not diseases:
+        print("\nNo se encontraron enfermedades asociadas a este síntoma.")
+    else:
+        print("\nEnfermedades diagnosticadas asociadas a este síntoma:")
+        for i, disease in enumerate(diseases, 1):
+            print(f"\n  Enfermedad {i}:")
+            print(f"    ID: {disease.get('disease_id', 'N/A')}")
+            print(f"    Nombre: {disease.get('name_of_disease', 'N/A')}")
+            print(f"    Descripción: {disease.get('description_of_disease', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")
+
+
 
 
 def get_doctors_recommended_by_doctor(client, doctor_id_value):
@@ -1002,10 +1482,46 @@ def get_doctors_recommended_by_doctor(client, doctor_id_value):
     variables = {
         '$docId': doctor_id_value
     }
-    
+
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2)) 
+
+    print(f"\n--- Reporte de Recomendaciones del Doctor ID: {doctor_id_value} ---")
+
+    recommending_list = data.get('recommending_doctor_details', [])
+    if not recommending_list:
+        print("No se encontró información para el doctor especificado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    recommending_doctor = recommending_list[0]
+    print("\nInformación del Doctor que Recomienda:")
+    print(f"  ID: {recommending_doctor.get('doctor_id', 'N/A')}")
+    print(f"  Nombre: {recommending_doctor.get('name_of_recommending_doctor', 'N/A')}")
+
+    recommended_doctors = recommending_doctor.get('recommended_doctors_list', [])
+
+    if not recommended_doctors:
+        print("\nEste doctor no ha recomendado a ningún otro doctor.")
+    else:
+        print(f"\nDoctores recomendados por {recommending_doctor.get('name_of_recommending_doctor', 'N/A')}:")
+        for i, doc in enumerate(recommended_doctors, 1):
+            print(f"\n  Doctor Recomendado {i}:")
+            print(f"    ID: {doc.get('doctor_id', 'N/A')}")
+            print(f"    Nombre: {doc.get('name_of_recommended_doctor', 'N/A')}")
+            print(f"    Número de licencia: {doc.get('license_number', 'N/A')}")
+            print(f"    Años de experiencia: {doc.get('years_experience', 'N/A')}")
+
+            specialties = doc.get('specializes', [])
+            if specialties:
+                print("    Especialidades:")
+                for spec in specialties:
+                    print(f"      - {spec.get('name_of_specialty', 'N/A')} (ID: {spec.get('specialty_id', 'N/A')})")
+            else:
+                print("    Especialidades: No registradas")
+
+    print("\n--- Fin del Reporte ---")
+
 
 
 def get_treatment_rehabilitation_info(client, treatment_id_value):
@@ -1031,4 +1547,29 @@ def get_treatment_rehabilitation_info(client, treatment_id_value):
     
     res = client.txn(read_only=True).query(query, variables=variables)
     data = json.loads(res.json)
-    print(json.dumps(data, indent=2))
+
+    print(f"\n--- Información de Rehabilitación para Tratamiento ID: {treatment_id_value} ---")
+
+    treatment_data = data.get('treatment_rehab_details', [])
+    if not treatment_data:
+        print("No se encontró información de rehabilitación para el tratamiento indicado.")
+        print("--- Fin del Reporte ---")
+        return
+
+    treatment = treatment_data[0]
+    print(f"\nTratamiento:")
+    print(f"  ID: {treatment.get('treatment_id', 'N/A')}")
+    print(f"  Nombre: {treatment.get('name_of_treatment', 'N/A')}")
+
+    rehab_times = treatment.get('required_rehabilitation_time', [])
+    if not rehab_times:
+        print("\nNo se encontró información de tiempo de rehabilitación.")
+    else:
+        print("\nTiempos de Rehabilitación Requeridos:")
+        for i, rehab in enumerate(rehab_times, 1):
+            print(f"\n  Rehabilitación {i}:")
+            print(f"    ID: {rehab.get('rehabilitation_id', 'N/A')}")
+            print(f"    Duración: {rehab.get('rehabilitation_duration', 'N/A')}")
+            print(f"    Severidad de la condición: {rehab.get('condition_severity', 'N/A')}")
+
+    print("\n--- Fin del Reporte ---")

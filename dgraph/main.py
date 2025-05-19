@@ -80,36 +80,36 @@ def main():
                 model.get_patient_health_summary(client, patient_id)
                 
             elif option == 6:
-                specialty_id = input("Enter specialty ID: ")
-                model.get_doctors_by_specialty(client, specialty_id)
+                specialty_id = input("Enter specialty name: ")
+                model.get_doctors_by_specialty_name(client, specialty_id)
                 
             elif option == 7:
-                disease_id = input("Enter disease ID: ")
-                model.get_treatments_and_medications_for_disease_by_id(client, disease_id)
+                disease_id = input("Enter disease name: ")
+                model.get_treatments_and_medications_for_disease_by_name(client, disease_id)
                 
             elif option == 8:
-                medication_id = input("Enter medication ID: ")
-                model.get_side_effects_for_medication(client, medication_id)
+                medication_id = input("Enter medication NAME: ")
+                model.get_side_effects_for_medication_by_name(client, medication_id)
                 
             elif option == 9:
-                team_id = input("Enter team ID: ")
-                model.get_team_composition_and_patients(client, team_id)
+                team_id = input("Enter team name: ")
+                model.get_team_composition_and_patients_by_name(client, team_id)
                 
             elif option == 10:
                 patient_id = input("Enter patient ID: ")
                 model.check_family_hereditary_disease_risk(client, patient_id)
                 
             elif option == 11:
-                medication_id = input("Enter medication ID: ")
-                model.get_medication_interactions(client, medication_id)
+                medication_id = input("Enter medication name: ")
+                model.get_medication_interactions_by_name(client, medication_id)
                 
             elif option == 12:
                 treatment_id = input("Enter treatment ID: ")
                 model.get_treatment_effectiveness(client, treatment_id)
                 
             elif option == 13:
-                symptom_id = input("Enter symptom ID: ")
-                model.get_diseases_for_symptom(client, symptom_id)
+                symptom_id = input("Enter symptom name: ")
+                model.get_diseases_for_symptom_by_name(client, symptom_id)
                 
             elif option == 14:
                 doctor_id = input("Enter doctor ID: ")
