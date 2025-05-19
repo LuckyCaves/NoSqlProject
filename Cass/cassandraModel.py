@@ -88,18 +88,6 @@ CREATE_APPOINTMENTS_BY_DATE_PD_TABLE = """
     )WITH CLUSTERING ORDER BY (appointment_id DESC);
 """
 
-CREATE_APPOINTMENTS_BY_DATE_TABLE = """
-    CREATE TABLE IF NOT EXISTS appointments_by_date (
-        appointment_id TIMEUUID,
-        appointment_date DATE,
-        patient_id TEXT,
-        doctor_id TEXT,
-        status TEXT,
-        notes TEXT,
-        PRIMARY KEY (appointment_id)
-    )WITH CLUSTERING ORDER BY (appointment_id DESC);
-"""
-
 CREATE_VITAL_SIGNS_BY_ACCOUNT_DATE_TABLE = """
     CREATE TABLE IF NOT EXISTS vital_signs_by_account_date (
         vital_sign_id TIMEUUID,
